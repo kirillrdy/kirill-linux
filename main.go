@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"path"
 )
 
 func crash(err error) {
@@ -52,12 +54,25 @@ func Cd(dir string) {
 }
 
 func main() {
+	cwd, err := os.Getwd()
+	crash(err)
+
 	newRoot := "/home/kirillvr/newroot"
 
-	Rm("-rf", "glibc-2.30")
-	Curl("-O", "http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz")
-	Tar("xf", "glibc-2.30.tar.xz")
-	Cd("glibc-2.30")
+	packageName := "glibc"
+	packageVersion := "2.30"
+	packageNameVersion := packageName + "-" + packageVersion
+	workDir := path.Join(cwd, packageNameVersion)
+	destDir := path.Join(workDir, "package")
+
+	Cd(workDir)
+	tarBallUrl := fmt.Sprintf("http://ftp.gnu.org/gnu/glibc/%s.tar.xz", packageNameVersion)
+	tarBallFilename := path.Base(tarBallUrl)
+
+	Rm("-rf", workDir)
+	Curl("-O", tarBallUrl)
+	Tar("xf", tarBallFilename)
+	Cd(packageNameVersion)
 	Mkdir("build")
 	Cd("build")
 	DotDotConfigure("--prefix=/usr",
@@ -68,7 +83,7 @@ func main() {
 		"libc_cv_slibdir=/lib")
 
 	Make("-j10")
-	Make("install_root="+newRoot, "install")
+	Make("install_root="+destDir, "install")
 	Cd("../..")
 
 	Curl("-O", "http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz")
