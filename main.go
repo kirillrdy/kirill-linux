@@ -53,9 +53,25 @@ func Cd(dir string) {
 	os.Chdir(dir)
 }
 
+func fetch(cwd, url string) {
+	distfiles := path.Join(cwd, "distfiles")
+	err := os.Mkdir(distfiles, os.ModePerm)
+	crash(err)
+	Cd(distfiles)
+	Curl("-O", url)
+	Cd(cwd)
+}
+
+func extract(fileName string) {
+
+}
+
 func main() {
 	cwd, err := os.Getwd()
 	crash(err)
+
+	url := "http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz"
+	fetch(cwd, url)
 
 	newRoot := "/home/kirillvr/newroot"
 
