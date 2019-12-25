@@ -70,4 +70,50 @@ func main() {
 	Make("-j10")
 	Make("install_root="+newRoot, "install")
 	Cd("../..")
+
+	Curl("-O", "http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz")
+	Rm("-rfv", "binutils-2.32")
+	Tar("xf", "binutils-2.32.tar.xz")
+	Cd("binutils-2.32")
+	Mkdir("build")
+	Cd("build")
+	DotDotConfigure("--prefix=/usr",
+		"--enable-gold",
+		"--enable-ld=default",
+		"--enable-plugins",
+		"--enable-shared",
+		"--disable-werror",
+		"--enable-64-bit-bfd",
+		"--with-system-zlib")
+	Make("-j10")
+	Make("install", "DESTDIR="+newRoot)
+	Cd("../..")
+
+	Curl("-O", "http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz")
+	Rm("-rfv", "ncurses-6.1")
+	Tar("xf", "ncurses-6.1.tar.gz")
+	Cd("ncurses-6.1")
+	DotConfigure("--prefix=/usr",
+		"--mandir=/usr/share/man",
+		"--with-shared",
+		"--without-debug",
+		"--without-normal",
+		"--enable-pc-files",
+		"--enable-widec")
+	Make("-j10")
+	Make("install", "DESTDIR="+newRoot)
+	Cd("..")
+
+	Curl("-O", "http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz")
+	Rm("-rfv", "bash-5.0")
+	Tar("xf", "bash-5.0.tar.gz")
+	Cd("bash-5.0")
+	DotConfigure("--prefix=/usr",
+		"--docdir=/usr/share/doc/bash-5.0",
+		"--without-bash-malloc",
+		"--with-installed-readline")
+
+	Make("-j10")
+	Make("install", "DESTDIR="+newRoot)
+	Cd("..")
 }
