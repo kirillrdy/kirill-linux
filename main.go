@@ -178,3 +178,7 @@ func main() {
 		Make("install", "DESTDIR="+destDir)
 	})
 }
+
+// package things
+// extract make bits
+// build gcc
