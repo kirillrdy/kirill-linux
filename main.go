@@ -136,7 +136,9 @@ func main() {
 			"libc_cv_slibdir=/lib")
 
 		Make("-j10")
-		Make("install_root="+destDir, "install")
+
+		Make("install", "DESTDIR="+destDir)
+		//Make("install_root="+destDir, "install")
 	})
 
 	install("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func(destDir string) {
