@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -53,42 +52,49 @@ func Cd(dir string) {
 	os.Chdir(dir)
 }
 
-func fetch(cwd, url string) {
-	distfiles := path.Join(cwd, "distfiles")
-	err := os.Mkdir(distfiles, os.ModePerm)
-	crash(err)
-	Cd(distfiles)
+func fetch(url string) {
+	Cd(DistfilesPath)
 	Curl("-O", url)
-	Cd(cwd)
+	Cd(Cwd)
 }
 
-func extract(fileName string) {
-
+func extract(url string) {
+	fileName := path.Base(url)
+	tarballPath := path.Join(DistfilesPath, fileName)
+	Tar("xf", tarballPath, "-C", BuildPath)
 }
 
-func main() {
-	cwd, err := os.Getwd()
+// You can think of this as root directory for everything
+var Cwd string
+var DistfilesPath string
+var BuildPath string
+
+func setUpGlobals() {
+
+	var err error
+	Cwd, err = os.Getwd()
 	crash(err)
 
+	DistfilesPath = path.Join(Cwd, "distfiles")
+	err = os.MkdirAll(DistfilesPath, os.ModePerm)
+	crash(err)
+
+	BuildPath = path.Join(Cwd, "build")
+	os.RemoveAll(BuildPath)
+	err = os.MkdirAll(BuildPath, os.ModePerm)
+	crash(err)
+}
+
+func installGlibc() {
 	url := "http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz"
-	fetch(cwd, url)
+	fetch(url)
+	extract(url)
 
-	newRoot := "/home/kirillvr/newroot"
-
-	packageName := "glibc"
-	packageVersion := "2.30"
-	packageNameVersion := packageName + "-" + packageVersion
-	workDir := path.Join(cwd, packageNameVersion)
-	destDir := path.Join(workDir, "package")
+	extractedDirName := "glibc-2.30"
+	workDir := path.Join(BuildPath, extractedDirName)
+	destDir := path.Join(BuildPath, extractedDirName+"-package")
 
 	Cd(workDir)
-	tarBallUrl := fmt.Sprintf("http://ftp.gnu.org/gnu/glibc/%s.tar.xz", packageNameVersion)
-	tarBallFilename := path.Base(tarBallUrl)
-
-	Rm("-rf", workDir)
-	Curl("-O", tarBallUrl)
-	Tar("xf", tarBallFilename)
-	Cd(packageNameVersion)
 	Mkdir("build")
 	Cd("build")
 	DotDotConfigure("--prefix=/usr",
@@ -100,7 +106,14 @@ func main() {
 
 	Make("-j10")
 	Make("install_root="+destDir, "install")
-	Cd("../..")
+
+}
+
+func main() {
+	setUpGlobals()
+
+	installGlibc()
+	Cd(Cwd)
 
 	Curl("-O", "http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz")
 	Rm("-rfv", "binutils-2.32")
@@ -108,6 +121,9 @@ func main() {
 	Cd("binutils-2.32")
 	Mkdir("build")
 	Cd("build")
+
+	newRoot := "/home/kirillvr/newroot"
+
 	DotDotConfigure("--prefix=/usr",
 		"--enable-gold",
 		"--enable-ld=default",
