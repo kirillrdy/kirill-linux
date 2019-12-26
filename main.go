@@ -127,14 +127,12 @@ func setUpGlobals() {
 }
 
 func installSimple(url string) {
-	install(url, func(destDir string) {
+	install(url, func() {
 		DotConfigure("--prefix=/usr")
-		Make("-j8")
-		Make("install", "DESTDIR="+destDir)
 	})
 }
 
-func install(url string, build func(string)) {
+func install(url string, build func()) {
 	tarBall := path.Join(PkgPath, packageVersion(url)+".tar.xz")
 
 	if _, err := os.Stat(tarBall); os.IsNotExist(err) {
@@ -142,7 +140,12 @@ func install(url string, build func(string)) {
 		extract(url)
 		sourceDir := path.Join(BuildPath, packageVersion(url))
 		destDir := path.Join(BuildPath, packageVersion(url)+"-package")
-		build(destDir)
+		build()
+
+		//TODO detect 8
+		Make("-j8")
+		Make("install", "DESTDIR="+destDir)
+
 		Tar("cf", tarBall, "-C", destDir, ".")
 		Rm("-rf", sourceDir)
 		Rm("-rf", destDir)
@@ -157,7 +160,7 @@ func install(url string, build func(string)) {
 func main() {
 	setUpGlobals()
 
-	install("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func(destDir string) {
+	install("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
 		Mkdir("build")
 		Cd("build")
 		DotDotConfigure("--prefix=/usr",
@@ -166,16 +169,13 @@ func main() {
 			"--enable-stack-protector=strong",
 			"--with-headers=/usr/include",
 			"libc_cv_slibdir=/lib")
-
-		Make("-j10")
-		Make("install", "DESTDIR="+destDir)
 	})
 
 	installSimple("https://zlib.net/zlib-1.2.11.tar.xz")
 	installSimple("ftp://ftp.astron.com/pub/file/file-5.37.tar.gz")
 	installSimple("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
 
-	install("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func(destDir string) {
+	install("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
 		Mkdir("build")
 		Cd("build")
 		DotDotConfigure("--prefix=/usr",
@@ -186,19 +186,15 @@ func main() {
 			"--disable-werror",
 			"--enable-64-bit-bfd",
 			"--with-system-zlib")
-		Make("-j10")
-		Make("install", "DESTDIR="+destDir)
 	})
 
-	install("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func(destDir string) {
+	install("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--with-internal-glib",
 			"--disable-host-tool")
-		Make("-j10")
-		Make("install", "DESTDIR="+destDir)
 	})
 
-	install("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func(destDir string) {
+	install("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
 		//TODO less hardcoded versions
 		fetch("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
 		extract("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
@@ -219,11 +215,9 @@ func main() {
 			"--disable-multilib",
 			"--disable-bootstrap",
 			"--with-system-zlib")
-		Make("-j10")
-		Make("install", "DESTDIR="+destDir)
 	})
 
-	install("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func(destDir string) {
+	install("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--mandir=/usr/share/man",
 			"--with-shared",
@@ -231,25 +225,18 @@ func main() {
 			"--without-normal",
 			"--enable-pc-files",
 			"--enable-widec")
-		Make("-j10")
-		Make("install", "DESTDIR="+destDir)
 	})
 
-	install("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func(destDir string) {
+	install("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--docdir=/usr/share/doc/bash-5.0",
 			"--without-bash-malloc",
 			"--with-installed-readline")
 
-		Make("-j10")
-		Make("install", "DESTDIR="+destDir)
 	})
 
 	installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
 
 }
 
-// package things
-// extract make bits
-// build gcc
 // before extraction check for clashes
