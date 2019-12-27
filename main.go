@@ -52,6 +52,10 @@ func mv(args ...string) {
 	execCmd("mv", args...)
 }
 
+func ln(args ...string) {
+	execCmd("ln", args...)
+}
+
 func dotConfigure(args ...string) {
 	execCmd("./configure", args...)
 }
@@ -113,6 +117,9 @@ var BuildPath string
 // PkgPath is where binary packages get stored
 var PkgPath string
 
+// InstallPrefix prefix is where we are all going to install things for new system
+var InstallPrefix string
+
 func setUpGlobals() {
 
 	var err error
@@ -130,6 +137,11 @@ func setUpGlobals() {
 	PkgPath = path.Join(Cwd, "package")
 	err = os.MkdirAll(PkgPath, os.ModePerm)
 	crash(err)
+
+	InstallPrefix = path.Join(Cwd, "newroot")
+	err = os.MkdirAll(InstallPrefix, os.ModePerm)
+	crash(err)
+
 }
 
 func installSimple(url string) {
@@ -139,6 +151,10 @@ func installSimple(url string) {
 }
 
 func installConfigure(url string, configure func()) {
+	installConfigurePrePackage(url, configure, func() {})
+}
+
+func installConfigurePrePackage(url string, configure func(), prePackage func()) {
 	tarBall := path.Join(PkgPath, packageVersion(url)+".tar.xz")
 
 	if _, err := os.Stat(tarBall); os.IsNotExist(err) {
@@ -151,22 +167,24 @@ func installConfigure(url string, configure func()) {
 		//TODO detect 8
 		make("-j8")
 		make("install", "DESTDIR="+destDir)
+		cd(destDir)
+		prePackage()
 
 		tar("cf", tarBall, "-C", destDir, ".")
+		cd(Cwd)
 		rm("-rf", sourceDir)
 		rm("-rf", destDir)
-		cd(Cwd)
 	}
 
 	//TODO also dont do this if its already installed eg need some way of tracking those
 	//TODO replace with desired prefix
-	tar("xf", tarBall, "-C", "/home/kirillvr/newroot")
+	tar("xf", tarBall, "-C", InstallPrefix)
 }
 
 func main() {
 	setUpGlobals()
 
-	installConfigure("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
+	installConfigurePrePackage("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
 		mkdir("build")
 		cd("build")
 		dotDotConfigure("--prefix=/usr",
@@ -175,6 +193,9 @@ func main() {
 			"--enable-stack-protector=strong",
 			"--with-headers=/usr/include",
 			"libc_cv_slibdir=/lib")
+	}, func() {
+		//TODO need a better longterm solution
+		ln("-s", "lib", "lib64")
 	})
 
 	installSimple("https://zlib.net/zlib-1.2.11.tar.xz")
@@ -242,8 +263,9 @@ func main() {
 
 	})
 
+	installSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
 	installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
 
 }
 
-// before extraction check for clashes
+// TODO before extraction check for clashes
