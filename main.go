@@ -28,39 +28,39 @@ func execCmd(cmd string, args ...string) {
 	crash(err)
 }
 
-func Curl(args ...string) {
+func curl(args ...string) {
 	execCmd("curl", args...)
 }
 
-func Mkdir(args ...string) {
+func mkdir(args ...string) {
 	execCmd("mkdir", args...)
 }
 
-func Tar(args ...string) {
+func tar(args ...string) {
 	execCmd("tar", args...)
 }
 
-func Make(args ...string) {
+func make(args ...string) {
 	execCmd("make", args...)
 }
 
-func Rm(args ...string) {
+func rm(args ...string) {
 	execCmd("rm", args...)
 }
 
-func Mv(args ...string) {
+func mv(args ...string) {
 	execCmd("mv", args...)
 }
 
-func DotConfigure(args ...string) {
+func dotConfigure(args ...string) {
 	execCmd("./configure", args...)
 }
 
-func DotDotConfigure(args ...string) {
+func dotDotConfigure(args ...string) {
 	execCmd("../configure", args...)
 }
 
-func Cd(dir string) {
+func cd(dir string) {
 	log.Printf("cd %s", dir)
 	os.Chdir(dir)
 }
@@ -68,9 +68,9 @@ func Cd(dir string) {
 func fetch(url string) {
 	expetedPath := path.Join(DistfilesPath, path.Base(url))
 	if _, err := os.Stat(expetedPath); os.IsNotExist(err) {
-		Cd(DistfilesPath)
-		Curl("-O", "-L", url)
-		Cd(Cwd)
+		cd(DistfilesPath)
+		curl("-O", "-L", url)
+		cd(Cwd)
 	}
 }
 
@@ -95,16 +95,22 @@ func packageVersion(url string) string {
 func extract(url string) {
 	fileName := path.Base(url)
 	tarballPath := path.Join(DistfilesPath, fileName)
-	Tar("xf", tarballPath, "-C", BuildPath)
+	tar("xf", tarballPath, "-C", BuildPath)
 
 	extractedPath := path.Join(BuildPath, packageVersion(url))
-	Cd(extractedPath)
+	cd(extractedPath)
 }
 
-// You can think of this as root directory for everything
+// Cwd we remeber cwd in order to get back here
 var Cwd string
+
+// DistfilesPath is where all distfiles are stored
 var DistfilesPath string
+
+// BuildPath is where all the work is done
 var BuildPath string
+
+// PkgPath is where binary packages get stored
 var PkgPath string
 
 func setUpGlobals() {
@@ -127,12 +133,12 @@ func setUpGlobals() {
 }
 
 func installSimple(url string) {
-	install(url, func() {
-		DotConfigure("--prefix=/usr")
+	installConfigure(url, func() {
+		dotConfigure("--prefix=/usr")
 	})
 }
 
-func install(url string, build func()) {
+func installConfigure(url string, configure func()) {
 	tarBall := path.Join(PkgPath, packageVersion(url)+".tar.xz")
 
 	if _, err := os.Stat(tarBall); os.IsNotExist(err) {
@@ -140,30 +146,30 @@ func install(url string, build func()) {
 		extract(url)
 		sourceDir := path.Join(BuildPath, packageVersion(url))
 		destDir := path.Join(BuildPath, packageVersion(url)+"-package")
-		build()
+		configure()
 
 		//TODO detect 8
-		Make("-j8")
-		Make("install", "DESTDIR="+destDir)
+		make("-j8")
+		make("install", "DESTDIR="+destDir)
 
-		Tar("cf", tarBall, "-C", destDir, ".")
-		Rm("-rf", sourceDir)
-		Rm("-rf", destDir)
-		Cd(Cwd)
+		tar("cf", tarBall, "-C", destDir, ".")
+		rm("-rf", sourceDir)
+		rm("-rf", destDir)
+		cd(Cwd)
 	}
 
 	//TODO also dont do this if its already installed eg need some way of tracking those
 	//TODO replace with desired prefix
-	Tar("xf", tarBall, "-C", "/home/kirillvr/newroot")
+	tar("xf", tarBall, "-C", "/home/kirillvr/newroot")
 }
 
 func main() {
 	setUpGlobals()
 
-	install("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
-		Mkdir("build")
-		Cd("build")
-		DotDotConfigure("--prefix=/usr",
+	installConfigure("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
+		mkdir("build")
+		cd("build")
+		dotDotConfigure("--prefix=/usr",
 			"--disable-werror",
 			"--enable-kernel=3.2",
 			"--enable-stack-protector=strong",
@@ -175,10 +181,10 @@ func main() {
 	installSimple("ftp://ftp.astron.com/pub/file/file-5.37.tar.gz")
 	installSimple("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
 
-	install("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
-		Mkdir("build")
-		Cd("build")
-		DotDotConfigure("--prefix=/usr",
+	installConfigure("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
+		mkdir("build")
+		cd("build")
+		dotDotConfigure("--prefix=/usr",
 			"--enable-gold",
 			"--enable-ld=default",
 			"--enable-plugins",
@@ -188,13 +194,13 @@ func main() {
 			"--with-system-zlib")
 	})
 
-	install("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
-		DotConfigure("--prefix=/usr",
+	installConfigure("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
+		dotConfigure("--prefix=/usr",
 			"--with-internal-glib",
 			"--disable-host-tool")
 	})
 
-	install("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
+	installConfigure("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
 		//TODO less hardcoded versions
 		fetch("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
 		extract("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
@@ -203,22 +209,23 @@ func main() {
 		fetch("https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz")
 		extract("https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz")
 
-		Cd("../gcc-9.2.0")
-		Mv("../gmp-6.1.2", "gmp")
-		Mv("../mpfr-4.0.2", "mpfr")
-		Mv("../mpc-1.1.0", "mpc")
+		//TODO less
+		cd("../gcc-9.2.0")
+		mv("../gmp-6.1.2", "gmp")
+		mv("../mpfr-4.0.2", "mpfr")
+		mv("../mpc-1.1.0", "mpc")
 
-		Mkdir("build")
-		Cd("build")
-		DotDotConfigure("--prefix=/usr",
+		mkdir("build")
+		cd("build")
+		dotDotConfigure("--prefix=/usr",
 			"--enable-languages=c,c++",
 			"--disable-multilib",
 			"--disable-bootstrap",
 			"--with-system-zlib")
 	})
 
-	install("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
-		DotConfigure("--prefix=/usr",
+	installConfigure("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
+		dotConfigure("--prefix=/usr",
 			"--mandir=/usr/share/man",
 			"--with-shared",
 			"--without-debug",
@@ -227,8 +234,8 @@ func main() {
 			"--enable-widec")
 	})
 
-	install("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
-		DotConfigure("--prefix=/usr",
+	installConfigure("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
+		dotConfigure("--prefix=/usr",
 			"--docdir=/usr/share/doc/bash-5.0",
 			"--without-bash-malloc",
 			"--with-installed-readline")
