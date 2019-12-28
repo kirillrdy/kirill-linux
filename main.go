@@ -15,6 +15,14 @@ func crash(err error) {
 	}
 }
 
+func appendToFile(fileName string, text string) {
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, 0644)
+	crash(err)
+	defer file.Close()
+	_, err = file.WriteString(text)
+	crash(err)
+}
+
 func execCmd(cmd string, args ...string) {
 	log.Printf("%s %s", cmd, args)
 	command := exec.Command(cmd, args...)
@@ -190,6 +198,18 @@ func installConfigurePrePackage(url string, configure func(), prePackage func())
 
 func main() {
 	setUpGlobals()
+
+	installConfigure("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
+		//TODO clean up after zfs, we might need to install zfs utils as well
+		extract("https://github.com/zfsonlinux/zfs/releases/download/zfs-0.8.2/zfs-0.8.2.tar.gz")
+		dotConfigure("--enable-linux-builtin")
+		make("-j8")
+		execCmd("./copy-builtin", "../linux-5.4.6")
+		cd("../linux-5.4.6")
+		make("defconfig")
+		appendToFile(".config", "CONFIG_ZFS=y\n")
+		make("-j8")
+	})
 
 	installConfigurePrePackage("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
 		mkdir("build")
