@@ -164,19 +164,23 @@ func installConfigurePrePackage(url string, configure func(), prePackage func())
 	if _, err := os.Stat(tarBall); os.IsNotExist(err) {
 		extract(url)
 		sourceDir := path.Join(BuildPath, packageVersion(url))
-		destDir := path.Join(BuildPath, packageVersion(url)+"-package")
+
 		configure()
 
 		//TODO detect 8
 		make("-j8")
+
+		// Part of packaging
+		destDir := path.Join(BuildPath, packageVersion(url)+"-package")
 		make("install", "DESTDIR="+destDir)
 		cd(destDir)
 		prePackage()
-
 		tar("cf", tarBall, "-C", destDir, ".")
 		cd(Cwd)
-		rm("-rf", sourceDir)
 		rm("-rf", destDir)
+
+		rm("-rf", sourceDir)
+
 	}
 
 	//TODO also dont do this if its already installed eg need some way of tracking those
