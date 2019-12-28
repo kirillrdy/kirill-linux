@@ -70,12 +70,9 @@ func cd(dir string) {
 }
 
 func fetch(url string) {
-	expetedPath := path.Join(DistfilesPath, path.Base(url))
-	if _, err := os.Stat(expetedPath); os.IsNotExist(err) {
-		cd(DistfilesPath)
-		curl("-O", "-L", url)
-		cd(Cwd)
-	}
+	cd(DistfilesPath)
+	curl("-O", "-L", url)
+	cd(Cwd)
 }
 
 func packageVersion(url string) string {
@@ -97,6 +94,12 @@ func packageVersion(url string) string {
 }
 
 func extract(url string) {
+
+	expetedPath := path.Join(DistfilesPath, path.Base(url))
+	if _, err := os.Stat(expetedPath); os.IsNotExist(err) {
+		fetch(url)
+	}
+
 	fileName := path.Base(url)
 	tarballPath := path.Join(DistfilesPath, fileName)
 	tar("xf", tarballPath, "-C", BuildPath)
@@ -158,7 +161,6 @@ func installConfigurePrePackage(url string, configure func(), prePackage func())
 	tarBall := path.Join(PkgPath, packageVersion(url)+".tar.xz")
 
 	if _, err := os.Stat(tarBall); os.IsNotExist(err) {
-		fetch(url)
 		extract(url)
 		sourceDir := path.Join(BuildPath, packageVersion(url))
 		destDir := path.Join(BuildPath, packageVersion(url)+"-package")
@@ -223,11 +225,8 @@ func main() {
 
 	installConfigure("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
 		//TODO less hardcoded versions
-		fetch("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
 		extract("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
-		fetch("https://www.mpfr.org/mpfr-4.0.2/mpfr-4.0.2.tar.xz")
 		extract("https://www.mpfr.org/mpfr-4.0.2/mpfr-4.0.2.tar.xz")
-		fetch("https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz")
 		extract("https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz")
 
 		//TODO less
