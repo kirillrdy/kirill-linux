@@ -95,17 +95,18 @@ func packageVersion(url string) string {
 
 func extract(url string) {
 
-	expetedPath := path.Join(DistfilesPath, path.Base(url))
-	if _, err := os.Stat(expetedPath); os.IsNotExist(err) {
+	expetedTarPath := path.Join(DistfilesPath, path.Base(url))
+	if _, err := os.Stat(expetedTarPath); os.IsNotExist(err) {
 		fetch(url)
 	}
 
-	fileName := path.Base(url)
-	tarballPath := path.Join(DistfilesPath, fileName)
-	tar("xf", tarballPath, "-C", BuildPath)
+	extractedSourcePath := path.Join(BuildPath, packageVersion(url))
+	if _, err := os.Stat(extractedSourcePath); os.IsNotExist(err) {
+		tarballPath := path.Join(DistfilesPath, path.Base(url))
+		tar("xf", tarballPath, "-C", BuildPath)
+	}
 
-	extractedPath := path.Join(BuildPath, packageVersion(url))
-	cd(extractedPath)
+	cd(extractedSourcePath)
 }
 
 // Cwd we remeber cwd in order to get back here
