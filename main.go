@@ -288,7 +288,13 @@ func main() {
 	})
 
 	//TODO currently broken
-	//installSimple("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz")
+	installConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
+		execCmd("bash", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' gl/lib/*.c")
+		execCmd("bash", "-c", "sed -i '/unistd/a #include <sys/sysmacros.h>' gl/lib/mountlist.c")
+		appendToFile("gl/lib/stdio-impl.h", "#define _IO_IN_BACKUP 0x100")
+		dotConfigure("--prefix=/usr", "--localstatedir=/var/lib/locate")
+	})
+
 	installSimple("http://www.greenwoodsoftware.com/less/less-551.tar.gz")
 	installSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
 	installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
