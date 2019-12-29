@@ -15,11 +15,14 @@ func crash(err error) {
 	}
 }
 
-func appendToFile(fileName string, text string) {
+// Note it also adds \n
+func appendToFile(fileName string, items ...string) {
+	log.Printf("Appending %v to %s\n", items, fileName)
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, 0644)
 	crash(err)
+
 	defer file.Close()
-	_, err = file.WriteString(text)
+	_, err = file.WriteString(strings.Join(items, "\n") + "\n")
 	crash(err)
 }
 
