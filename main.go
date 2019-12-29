@@ -265,6 +265,8 @@ func main() {
 			"--with-system-zlib")
 	})
 
+	installSimple("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz")
+
 	installConfigure("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
 		dotConfigure("--prefix=/usr",
 			"--mandir=/usr/share/man",
@@ -283,8 +285,20 @@ func main() {
 
 	})
 
+	//TODO currently broken
+	//installSimple("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz")
+	installSimple("http://www.greenwoodsoftware.com/less/less-551.tar.gz")
 	installSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
 	installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
+
+	installConfigure("https://sourceforge.net/projects/procps-ng/files/Production/procps-ng-3.3.15.tar.xz", func() {
+		dotConfigure("--prefix=/usr",
+			"--exec-prefix=",
+			"--libdir=/usr/lib",
+			"--docdir=/usr/share/doc/procps-ng-3.3.15",
+			"--disable-static",
+			"--disable-kill")
+	})
 
 	installConfigure("https://www.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz", func() {
 		dotConfigure("--docdir=/usr/share/doc/util-linux-2.34",
