@@ -204,19 +204,7 @@ func installBuildInstall(url string, build func(), install func(string)) {
 func main() {
 	setUpGlobals()
 
-	installConfigure("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
-		//TODO clean up after zfs, we might need to install zfs utils as well
-		extract("https://github.com/zfsonlinux/zfs/releases/download/zfs-0.8.2/zfs-0.8.2.tar.gz")
-		dotConfigure("--enable-linux-builtin")
-		make("-j8")
-		execCmd("./copy-builtin", "../linux-5.4.6")
-		cd("../linux-5.4.6")
-		make("defconfig")
-		appendToFile(".config", "CONFIG_ZFS=y\n")
-		make("-j8")
-	})
-
-	installConfigurePrePackage("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
+	installBuildInstall("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
 		mkdir("build")
 		cd("build")
 		dotDotConfigure("--prefix=/usr",
@@ -297,6 +285,36 @@ func main() {
 
 	installSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
 	installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
+
+	installBuildInstall("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
+
+		// zfs has very slow configure time, so disabling it until i get to zfs on root
+		enableZFS := false
+
+		if enableZFS {
+			extract("https://github.com/zfsonlinux/zfs/releases/download/zfs-0.8.2/zfs-0.8.2.tar.gz")
+			dotConfigure("--enable-linux-builtin")
+			make("-j8")
+			execCmd("./copy-builtin", "../linux-5.4.6")
+			cd("../linux-5.4.6")
+			rm("-rfv", "../zfs-0.8.2")
+		}
+		make("defconfig")
+		if enableZFS {
+			appendToFile(".config", "CONFIG_ZFS=y")
+		}
+		appendToFile(".config",
+			"CONFIG_CMDLINE_BOOL=y",
+			"CONFIG_CMDLINE=\"rootwait root=/dev/sdc2 init=/usr/bin/bash\"",
+			"CONFIG_DRM_NOUVEAU=y",
+		)
+
+		make("-j8")
+	}, func(destDir string) {
+		//TODO dont forget modules as well
+		mkdir("-p", path.Join(destDir, "/boot/efi/EFI/boot"))
+		mv("arch/x86/boot/bzImage", path.Join(destDir, "/boot/efi/EFI/boot/bootx64.efi"))
+	})
 
 }
 
