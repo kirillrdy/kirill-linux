@@ -286,6 +286,24 @@ func main() {
 	installSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
 	installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
 
+	installConfigure("https://www.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz", func() {
+		dotConfigure("--docdir=/usr/share/doc/util-linux-2.34",
+			"--disable-chfn-chsh",
+			"--disable-login",
+			"--disable-nologin",
+			"--disable-su",
+			"--disable-wall",
+			"--disable-setpriv",
+			"--disable-runuser",
+			"--disable-pylibmount",
+			"--disable-static",
+			"--without-python",
+			"--without-systemd",
+			"--without-systemdsystemunitdir",
+			"--disable-makeinstall-chown",
+		)
+	})
+
 	installBuildInstall("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
 
 		// zfs has very slow configure time, so disabling it until i get to zfs on root
