@@ -265,7 +265,9 @@ func main() {
 			"--with-system-zlib")
 	})
 
-	installSimple("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz")
+	installConfigure("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
+		dotConfigure("--prefix=/usr", "--bindir=/bin", "--disable-perl-regexp")
+	})
 
 	installConfigure("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
 		dotConfigure("--prefix=/usr",
