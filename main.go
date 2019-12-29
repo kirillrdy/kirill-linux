@@ -166,26 +166,28 @@ func installSimple(url string) {
 }
 
 func installConfigure(url string, configure func()) {
-	installConfigurePrePackage(url, configure, func() {})
+	installBuildInstall(url, func() {
+		configure()
+		//TODO detect 8
+		make("-j8")
+	}, func(destDir string) {
+		make("install", "DESTDIR="+destDir)
+	})
 }
 
-func installConfigurePrePackage(url string, configure func(), prePackage func()) {
+// stupid name, but what can you do
+func installBuildInstall(url string, build func(), install func(string)) {
 	tarBall := path.Join(PkgPath, packageVersion(url)+".tar.xz")
 
 	if _, err := os.Stat(tarBall); os.IsNotExist(err) {
 		extract(url)
 		sourceDir := path.Join(BuildPath, packageVersion(url))
 
-		configure()
-
-		//TODO detect 8
-		make("-j8")
+		build()
 
 		// Part of packaging
 		destDir := path.Join(BuildPath, packageVersion(url)+"-package")
-		make("install", "DESTDIR="+destDir)
-		cd(destDir)
-		prePackage()
+		install(destDir)
 		tar("cf", tarBall, "-C", destDir, ".")
 		cd(Cwd)
 		rm("-rf", destDir)
@@ -223,7 +225,10 @@ func main() {
 			"--enable-stack-protector=strong",
 			"--with-headers=/usr/include",
 			"libc_cv_slibdir=/lib")
-	}, func() {
+		make("-j8")
+	}, func(destDir string) {
+		make("install", "DESTDIR="+destDir)
+		cd(destDir)
 		//TODO need a better longterm solution
 		ln("-s", "lib", "lib64")
 	})
