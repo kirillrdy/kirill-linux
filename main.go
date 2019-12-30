@@ -15,7 +15,7 @@ func crash(err error) {
 	}
 }
 
-// Note it also adds \n
+// Note it also adds \n for each item it writes
 func appendToFile(fileName string, items ...string) {
 	log.Printf("Appending %v to %s\n", items, fileName)
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, 0644)
@@ -191,9 +191,7 @@ func installBuildInstall(url string, build func(), install func(string)) {
 		tar("cf", tarBall, "-C", destDir, ".")
 		cd(Cwd)
 		rm("-rf", destDir)
-
 		rm("-rf", sourceDir)
-
 	}
 
 	//TODO also dont do this if its already installed eg need some way of tracking those
