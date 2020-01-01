@@ -257,12 +257,17 @@ func main() {
 		mkdir("build")
 		cd("build")
 		dotDotConfigure("--prefix=/usr",
-			"--enable-languages=c,c++",
+			"--enable-languages=c,c++,go",
 			"--disable-multilib",
 			"--disable-bootstrap",
 			"--with-system-zlib")
 	})
 
+	installConfigure("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
+		dotConfigure("--prefix=/usr",
+			"--with-internal-glib",
+			"--disable-host-tool")
+	})
 	installConfigure("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
 		dotConfigure("--prefix=/usr", "--bindir=/bin", "--disable-perl-regexp")
 	})
