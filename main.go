@@ -368,6 +368,8 @@ rpc: files
 		)
 	})
 
+	installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
+
 	installBuildInstall("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
 
 		// zfs has very slow configure time, so disabling it until i get to zfs on root
