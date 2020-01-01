@@ -402,6 +402,10 @@ rpc: files
 
 	installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
 
+	installConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
+		dotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
+	})
+
 	installBuildInstall("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
 
 		// zfs has very slow configure time, so disabling it until i get to zfs on root
