@@ -348,12 +348,17 @@ rpc: files
 			"--enable-widec")
 	})
 
-	installConfigure("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
+	installBuildInstall("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
 		dotConfigure("--prefix=/usr",
 			"--docdir=/usr/share/doc/bash-5.0",
 			"--without-bash-malloc",
 			"--with-installed-readline")
-
+		make("-j8")
+	}, func(destDir string) {
+		make("install", "DESTDIR="+destDir)
+		cd(destDir)
+		mkdir("bin")
+		mv("usr/bin/bash", "bin/bash")
 	})
 
 	//TODO currently broken
