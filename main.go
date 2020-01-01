@@ -208,8 +208,35 @@ func main() {
 	mkdir("-p", path.Join(InstallPrefix, "dev"))
 	mkdir("-p", path.Join(InstallPrefix, "sys"))
 	mkdir("-p", path.Join(InstallPrefix, "run"))
+	mkdir("-p", path.Join(InstallPrefix, "root"))
 	mkdir("-p", path.Join(InstallPrefix, "proc"))
 
+	//TODO figure out wtf
+	//execCmd("mknod", "-m", "600", path.Join(InstallPrefix, "dev/console"), "c", "5", "1")
+	//execCmd("mknod", "-m", "666", path.Join(InstallPrefix, "dev/null"), "c", "1", "3")
+
+	appendToFile(path.Join(InstallPrefix, "etc/passwd"), "root::0:0:root:/root:/bin/bash\n")
+	appendToFile(path.Join(InstallPrefix, "etc/group"),
+		`
+root:x:0:
+bin:x:1:
+sys:x:2:
+kmem:x:3:
+tty:x:4:
+tape:x:5:
+daemon:x:6:
+floppy:x:7:
+disk:x:8:
+lp:x:9:
+dialout:x:10:
+audio:x:11:
+video:x:12:
+utmp:x:13:
+usb:x:14:
+`)
+
+	//TODO need some sort of createFile rather than append, so that doesnt do it if file is already
+	// there
 	appendToFile(path.Join(InstallPrefix, "etc/fstab"), `
 # Begin /etc/fstab
 
