@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -202,6 +203,28 @@ func installBuildInstall(url string, build func(), install func(string)) {
 func main() {
 	setUpGlobals()
 
+	mkdir("-p", path.Join(InstallPrefix, "etc"))
+	mkdir("-p", path.Join(InstallPrefix, "tmp"))
+	mkdir("-p", path.Join(InstallPrefix, "dev"))
+	mkdir("-p", path.Join(InstallPrefix, "sys"))
+	mkdir("-p", path.Join(InstallPrefix, "run"))
+	mkdir("-p", path.Join(InstallPrefix, "proc"))
+
+	appendToFile(path.Join(InstallPrefix, "etc/fstab"), `
+# Begin /etc/fstab
+
+# file system  mount-point  type     options             dump  fsck
+#                                                              order
+
+proc           /proc        proc     nosuid,noexec,nodev 0     0
+sysfs          /sys         sysfs    nosuid,noexec,nodev 0     0
+devpts         /dev/pts     devpts   gid=5,mode=620      0     0
+tmpfs          /run         tmpfs    defaults            0     0
+devtmpfs       /dev         devtmpfs mode=0755,nosuid    0     0
+
+# End /etc/fstab
+  `)
+
 	installBuildInstall("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
 		mkdir("build")
 		cd("build")
@@ -217,11 +240,32 @@ func main() {
 		cd(destDir)
 		//TODO need a better longterm solution
 		ln("-s", "lib", "lib64")
+		ioutil.WriteFile("etc/ld.so.conf", []byte("/usr/local/lib\n/opt/lib\n"), os.ModePerm)
+		nssContent := `
+# Begin /etc/nsswitch.conf
+
+passwd: files
+group: files
+shadow: files
+
+hosts: files dns
+networks: files
+
+protocols: files
+services: files
+ethers: files
+rpc: files
+
+# End /etc/nsswitch.conf
+    `
+		ioutil.WriteFile("etc/nsswitch.conf", []byte(nssContent), os.ModePerm)
 	})
 
 	installSimple("https://zlib.net/zlib-1.2.11.tar.xz")
 	installSimple("ftp://ftp.astron.com/pub/file/file-5.37.tar.gz")
 	installSimple("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
+	//m4 skipping for now
+	//bc skipping as well
 
 	installConfigure("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
 		mkdir("build")
@@ -234,12 +278,6 @@ func main() {
 			"--disable-werror",
 			"--enable-64-bit-bfd",
 			"--with-system-zlib")
-	})
-
-	installConfigure("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
-		dotConfigure("--prefix=/usr",
-			"--with-internal-glib",
-			"--disable-host-tool")
 	})
 
 	installConfigure("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
@@ -268,6 +306,7 @@ func main() {
 			"--with-internal-glib",
 			"--disable-host-tool")
 	})
+
 	installConfigure("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
 		dotConfigure("--prefix=/usr", "--bindir=/bin", "--disable-perl-regexp")
 	})
