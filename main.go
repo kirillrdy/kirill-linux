@@ -19,7 +19,7 @@ func crash(err error) {
 // Note it also adds \n for each item it writes
 func appendToFile(fileName string, items ...string) {
 	log.Printf("Appending %v to %s\n", items, fileName)
-	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	crash(err)
 
 	defer file.Close()
@@ -387,7 +387,7 @@ rpc: files
 		}
 		appendToFile(".config",
 			"CONFIG_CMDLINE_BOOL=y",
-			"CONFIG_CMDLINE=\"rootwait root=/dev/sdc2 init=/usr/bin/bash\"",
+			"CONFIG_CMDLINE=\"rootwait root=/dev/sdc2 init=/sbin/minit\"",
 			"CONFIG_DRM_NOUVEAU=y",
 		)
 
@@ -397,6 +397,10 @@ rpc: files
 		mkdir("-p", path.Join(destDir, "/boot/efi/EFI/boot"))
 		mv("arch/x86/boot/bzImage", path.Join(destDir, "/boot/efi/EFI/boot/bootx64.efi"))
 	})
+
+	cd("minit")
+	execCmd("go", "build", "minit.go")
+	mv("minit", path.Join(InstallPrefix, "sbin/minit"))
 
 }
 
