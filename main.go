@@ -442,4 +442,6 @@ rpc: files
 
 }
 
+// TODO extract directly onto usb stick
+// TODO dont extract things in to newroot if they are already there
 // TODO before extraction check for clashes
