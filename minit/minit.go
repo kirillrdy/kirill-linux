@@ -12,11 +12,12 @@ func crash(err error) {
 }
 
 func main() {
+	//TODO also print stdout etc
 	err := exec.Command("/bin/mount", "-o", "remount,rw", "/").Run()
 	crash(err)
 	err = exec.Command("/bin/mount", "-t", "proc", "/proc").Run()
 	crash(err)
-	cmd := exec.Command("/usr/bin/bash")
+	cmd := exec.Command("/sbin/agetty", "tty1", "9600")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
