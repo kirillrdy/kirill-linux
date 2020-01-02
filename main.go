@@ -400,10 +400,30 @@ rpc: files
 		)
 	})
 
-	installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
+	//TODO maybe dont need this as part of base
+	//installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
 
 	installConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
 		dotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
+	})
+
+	installConfigure("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
+		dotConfigure("--prefix=/usr",
+			"--localstatedir=/var",
+			"--disable-logger",
+			"--disable-whois",
+			"--disable-rcp",
+			"--disable-rexec",
+			"--disable-rlogin",
+			"--disable-rsh",
+			"--disable-servers")
+	})
+
+	installBuildInstall("ftp://ftp.isc.org/isc/dhcp/4.4.2b1/dhcp-4.4.2b1.tar.gz", func() {
+		dotConfigure("--prefix=/usr")
+		make("-j1")
+	}, func(destDir string) {
+		make("install", "-C", "client", "DESTDIR="+destDir)
 	})
 
 	installBuildInstall("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
@@ -436,6 +456,7 @@ rpc: files
 		mv("arch/x86/boot/bzImage", path.Join(destDir, "/boot/efi/EFI/boot/bootx64.efi"))
 	})
 
+	//TODO also package this so that we dont rebuild everything everytime
 	cd("minit")
 	execCmd("go", "build", "minit.go")
 	mv("minit", path.Join(InstallPrefix, "sbin/minit"))
