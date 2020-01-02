@@ -407,7 +407,7 @@ rpc: files
 		dotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
 	})
 
-	installConfigure("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
+	installConfigure("http://ftp.gnu.org/gnu/inetutils/inetutils-1.9.4.tar.xz", func() {
 		dotConfigure("--prefix=/usr",
 			"--localstatedir=/var",
 			"--disable-logger",
@@ -419,12 +419,20 @@ rpc: files
 			"--disable-servers")
 	})
 
-	installBuildInstall("ftp://ftp.isc.org/isc/dhcp/4.4.2b1/dhcp-4.4.2b1.tar.gz", func() {
+	installConfigure("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
 		dotConfigure("--prefix=/usr")
-		make("-j1")
-	}, func(destDir string) {
-		make("install", "-C", "client", "DESTDIR="+destDir)
 	})
+
+	installConfigure("https://roy.marples.name/downloads/dhcpcd/dhcpcd-8.1.4.tar.xz", func() {
+		dotConfigure("--libexecdir=/lib/dhcpcd", "--dbdir=/var/lib/dhcpcd")
+	})
+
+	//	installBuildInstall("ftp://ftp.isc.org/isc/dhcp/4.4.2b1/dhcp-4.4.2b1.tar.gz", func() {
+	//		dotConfigure("--prefix=/usr")
+	//		make("-j1")
+	//	}, func(destDir string) {
+	//		make("install", "-C", "client", "DESTDIR="+destDir)
+	//	})
 
 	installBuildInstall("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
 
