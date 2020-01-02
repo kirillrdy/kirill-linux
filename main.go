@@ -166,11 +166,14 @@ func installSimple(url string) {
 	})
 }
 
+//TODO detect
+const NumberOfMakeJobs = "-j8"
+
 func installConfigure(url string, configure func()) {
 	installBuildInstall(url, func() {
 		configure()
-		//TODO detect 8
-		make("-j8")
+
+		make(NumberOfMakeJobs)
 	}, func(destDir string) {
 		make("install", "DESTDIR="+destDir)
 	})
@@ -261,7 +264,7 @@ devtmpfs       /dev         devtmpfs mode=0755,nosuid    0     0
 			"--enable-stack-protector=strong",
 			"--with-headers=/usr/include",
 			"libc_cv_slibdir=/lib")
-		make("-j8")
+		make(NumberOfMakeJobs)
 	}, func(destDir string) {
 		make("install", "DESTDIR="+destDir)
 		cd(destDir)
@@ -353,7 +356,7 @@ rpc: files
 			"--docdir=/usr/share/doc/bash-5.0",
 			"--without-bash-malloc",
 			"--with-installed-readline")
-		make("-j8")
+		make(NumberOfMakeJobs)
 	}, func(destDir string) {
 		make("install", "DESTDIR="+destDir)
 		cd(destDir)
@@ -442,7 +445,7 @@ rpc: files
 		if enableZFS {
 			extract("https://github.com/zfsonlinux/zfs/releases/download/zfs-0.8.2/zfs-0.8.2.tar.gz")
 			dotConfigure("--enable-linux-builtin")
-			make("-j8")
+			make(NumberOfMakeJobs)
 			execCmd("./copy-builtin", "../linux-5.4.6")
 			cd("../linux-5.4.6")
 			rm("-rfv", "../zfs-0.8.2")
@@ -457,7 +460,7 @@ rpc: files
 			"CONFIG_DRM_NOUVEAU=y",
 		)
 
-		make("-j8")
+		make(NumberOfMakeJobs)
 	}, func(destDir string) {
 		//TODO dont forget modules as well
 		mkdir("-p", path.Join(destDir, "/boot/efi/EFI/boot"))
