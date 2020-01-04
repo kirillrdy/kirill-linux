@@ -2,8 +2,11 @@ package main
 
 import (
 	"bytes"
+	"flag"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -14,6 +17,18 @@ func crash(err error) {
 	if err != nil {
 		log.Panic(err)
 	}
+}
+
+//Not it also adds a new line
+func createFile(fileName string, content string) {
+	log.Printf("Creating file %s with content %s\n", fileName, content)
+	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
+	crash(err)
+
+	defer file.Close()
+	_, err = file.WriteString(content + "\n")
+	crash(err)
+
 }
 
 // Note it also adds \n for each item it writes
@@ -37,6 +52,16 @@ func execCmd(cmd string, args ...string) {
 	if err != nil {
 		log.Print(buffer.String())
 	}
+	crash(err)
+}
+
+func execCmdInteractive(cmd string, args ...string) {
+	log.Printf("%s %s", cmd, args)
+	command := exec.Command(cmd, args...)
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+	command.Stdin = os.Stdin
+	err := command.Run()
 	crash(err)
 }
 
@@ -82,8 +107,23 @@ func cd(dir string) {
 }
 
 func fetch(url string) {
+	log.Printf("fetching %s\n", url)
 	cd(DistfilesPath)
-	curl("-O", "-L", url)
+
+	// Get the data
+	resp, err := http.Get(url)
+	crash(err)
+	defer resp.Body.Close()
+
+	// Create the file
+	out, err := os.Create(path.Base(url))
+	crash(err)
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	crash(err)
+
 	cd(Cwd)
 }
 
@@ -206,6 +246,9 @@ func installBuildInstall(url string, build func(), install func(string)) {
 func main() {
 	setUpGlobals()
 
+	enterChroot := flag.Bool("c", false, "enter chroot")
+	flag.Parse()
+
 	mkdir("-p", path.Join(InstallPrefix, "etc"))
 	mkdir("-p", path.Join(InstallPrefix, "tmp"))
 	mkdir("-p", path.Join(InstallPrefix, "dev"))
@@ -214,12 +257,8 @@ func main() {
 	mkdir("-p", path.Join(InstallPrefix, "root"))
 	mkdir("-p", path.Join(InstallPrefix, "proc"))
 
-	//TODO figure out wtf
-	//execCmd("mknod", "-m", "600", path.Join(InstallPrefix, "dev/console"), "c", "5", "1")
-	//execCmd("mknod", "-m", "666", path.Join(InstallPrefix, "dev/null"), "c", "1", "3")
-
-	appendToFile(path.Join(InstallPrefix, "etc/passwd"), "root::0:0:root:/root:/bin/bash\n")
-	appendToFile(path.Join(InstallPrefix, "etc/group"),
+	createFile(path.Join(InstallPrefix, "etc/passwd"), "root::0:0:root:/root:/bin/bash\n")
+	createFile(path.Join(InstallPrefix, "etc/group"),
 		`
 root:x:0:
 bin:x:1:
@@ -240,7 +279,7 @@ usb:x:14:
 
 	//TODO need some sort of createFile rather than append, so that doesnt do it if file is already
 	// there
-	appendToFile(path.Join(InstallPrefix, "etc/fstab"), `
+	createFile(path.Join(InstallPrefix, "etc/fstab"), `
 # Begin /etc/fstab
 
 # file system  mount-point  type     options             dump  fsck
@@ -292,7 +331,7 @@ rpc: files
 	})
 
 	installSimple("https://zlib.net/zlib-1.2.11.tar.xz")
-	installSimple("ftp://ftp.astron.com/pub/file/file-5.37.tar.gz")
+	installSimple("http://ftp.astron.com/pub/file/file-5.37.tar.gz")
 	installSimple("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
 	//m4 skipping for now
 	//bc skipping as well
@@ -362,7 +401,10 @@ rpc: files
 		cd(destDir)
 		mkdir("bin")
 		mv("usr/bin/bash", "bin/bash")
+		ln("-s", "/bin/bash", "bin/sh")
 	})
+
+	installSimple("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
 
 	//TODO currently broken
 	installConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
@@ -376,7 +418,7 @@ rpc: files
 	installSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
 	installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
 
-	installConfigure("https://sourceforge.net/projects/procps-ng/files/Production/procps-ng-3.3.15.tar.xz", func() {
+	installConfigure("https://nchc.dl.sourceforge.net/project/procps-ng/Production/procps-ng-3.3.15.tar.xz", func() {
 		dotConfigure("--prefix=/usr",
 			"--exec-prefix=",
 			"--libdir=/usr/lib",
@@ -403,8 +445,16 @@ rpc: files
 		)
 	})
 
-	//TODO maybe dont need this as part of base
-	//installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
+	installSimple("http://ftp.gnu.org/gnu/gettext/gettext-0.20.1.tar.xz")
+	installSimple("http://ftp.gnu.org/gnu/gawk/gawk-5.0.1.tar.xz")
+	installSimple("http://ftp.gnu.org/gnu/bison/bison-3.5.tar.xz")
+	installConfigure("http://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz", func() {
+		execCmd("sh", "-c", "sed -i '211,217 d; 219,229 d; 232 d' glob/glob.c")
+		dotConfigure("--prefix=/usr")
+	})
+
+	// looks like we need this to bootstrap glibc
+	installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
 
 	installConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
 		dotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
@@ -429,13 +479,6 @@ rpc: files
 	installConfigure("https://roy.marples.name/downloads/dhcpcd/dhcpcd-8.1.4.tar.xz", func() {
 		dotConfigure("--libexecdir=/lib/dhcpcd", "--dbdir=/var/lib/dhcpcd")
 	})
-
-	//	installBuildInstall("ftp://ftp.isc.org/isc/dhcp/4.4.2b1/dhcp-4.4.2b1.tar.gz", func() {
-	//		dotConfigure("--prefix=/usr")
-	//		make("-j1")
-	//	}, func(destDir string) {
-	//		make("install", "-C", "client", "DESTDIR="+destDir)
-	//	})
 
 	installBuildInstall("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
 
@@ -471,6 +514,34 @@ rpc: files
 	cd("minit")
 	execCmd("go", "build", "minit.go")
 	mv("minit", path.Join(InstallPrefix, "sbin/minit"))
+
+	// Dev tools
+	//	installConfigure("https://www.kernel.org/pub/software/scm/git/git-2.24.1.tar.xz", func() {
+	//		dotConfigure("--prefix=/usr", "--without-tcltk")
+	//	})
+
+	installConfigure("https://www.openssl.org/source/openssl-1.1.1c.tar.gz", func() {
+		execCmd("./config", "--prefix=/usr",
+			"--openssldir=/etc/ssl",
+			"--libdir=lib",
+			"shared",
+			"zlib-dynamic")
+	})
+
+	installSimple("https://curl.haxx.se/download/curl-7.67.0.tar.xz")
+	installSimple("http://ftp.gnu.org/gnu/tar/tar-1.32.tar.xz")
+	installSimple("https://nchc.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz")
+
+	if *enterChroot {
+		log.Printf("Entering chroot !!!!!!")
+		cd(Cwd)
+		execCmd("go", "build", "main.go")
+		execCmd("cp", "/etc/resolv.conf", path.Join(InstallPrefix, "etc"))
+		mv("main", path.Join(InstallPrefix, "root"))
+		execCmdInteractive("sudo", "mount", "--bind", "/dev", path.Join(InstallPrefix, "dev"))
+		execCmdInteractive("sudo", "chroot", InstallPrefix, "/root/main")
+		os.Exit(1)
+	}
 
 }
 
