@@ -294,6 +294,8 @@ devtmpfs       /dev         devtmpfs mode=0755,nosuid    0     0
 # End /etc/fstab
   `)
 
+	linuxKernelSourcesURL := "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz"
+
 	installBuildInstall("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
 		mkdir("build")
 		cd("build")
@@ -453,6 +455,14 @@ rpc: files
 		dotConfigure("--prefix=/usr")
 	})
 
+	installConfigure("http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz", func() {
+		execCmd("sh", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' lib/*.c")
+		execCmd("sh", "-c", "echo \"#define _IO_IN_BACKUP 0x100\" >> lib/stdio-impl.h")
+		dotConfigure("--prefix=/usr")
+	})
+
+	installSimple("http://ftp.gnu.org/gnu/gzip/gzip-1.10.tar.xz")
+
 	// looks like we need this to bootstrap glibc
 	installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
 
@@ -480,7 +490,7 @@ rpc: files
 		dotConfigure("--libexecdir=/lib/dhcpcd", "--dbdir=/var/lib/dhcpcd")
 	})
 
-	installBuildInstall("https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz", func() {
+	installBuildInstall(linuxKernelSourcesURL, func() {
 
 		// zfs has very slow configure time, so disabling it until i get to zfs on root
 		enableZFS := false
@@ -508,6 +518,11 @@ rpc: files
 		//TODO dont forget modules as well
 		mkdir("-p", path.Join(destDir, "/boot/efi/EFI/boot"))
 		mv("arch/x86/boot/bzImage", path.Join(destDir, "/boot/efi/EFI/boot/bootx64.efi"))
+
+		make("headers")
+		mkdir("-p", path.Join(destDir, "usr"))
+		mv("usr/include", path.Join(destDir, "usr/"))
+
 	})
 
 	//TODO also package this so that we dont rebuild everything everytime
