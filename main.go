@@ -19,7 +19,7 @@ func crash(err error) {
 	}
 }
 
-//Not it also adds a new line
+//Note it also adds a new line
 func createFile(fileName string, content string) {
 	log.Printf("Creating file %s with content %s\n", fileName, content)
 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
@@ -408,7 +408,6 @@ rpc: files
 
 	installSimple("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
 
-	//TODO currently broken
 	installConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
 		execCmd("bash", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' gl/lib/*.c")
 		execCmd("bash", "-c", "sed -i '/unistd/a #include <sys/sysmacros.h>' gl/lib/mountlist.c")
