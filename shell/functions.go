@@ -14,6 +14,16 @@ func crash(err error) {
 	}
 }
 
+func ExecInteractive(cmd string, args ...string) {
+	log.Printf("%s %s", cmd, args)
+	command := exec.Command(cmd, args...)
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+	command.Stdin = os.Stdin
+	err := command.Run()
+	crash(err)
+}
+
 func Exec(cmd string, args ...string) {
 	log.Printf("%s %s", cmd, args)
 	command := exec.Command(cmd, args...)

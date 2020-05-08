@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 )
@@ -40,16 +39,6 @@ func appendToFile(fileName string, items ...string) {
 
 	defer file.Close()
 	_, err = file.WriteString(strings.Join(items, "\n") + "\n")
-	crash(err)
-}
-
-func execCmdInteractive(cmd string, args ...string) {
-	log.Printf("%s %s", cmd, args)
-	command := exec.Command(cmd, args...)
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
-	command.Stdin = os.Stdin
-	err := command.Run()
 	crash(err)
 }
 
@@ -499,8 +488,8 @@ rpc: files
 		Exec("go", "build", "main.go")
 		Exec("cp", "/etc/resolv.conf", path.Join(InstallPrefix, "etc"))
 		Mv("main", path.Join(InstallPrefix, "root"))
-		execCmdInteractive("sudo", "mount", "--bind", "/dev", path.Join(InstallPrefix, "dev"))
-		execCmdInteractive("sudo", "chroot", InstallPrefix, "/root/main")
+		ExecInteractive("sudo", "mount", "--bind", "/dev", path.Join(InstallPrefix, "dev"))
+		ExecInteractive("sudo", "chroot", InstallPrefix, "/root/main")
 		os.Exit(1)
 	}
 
