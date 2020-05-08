@@ -27,7 +27,7 @@ type Env struct {
 }
 
 //TODO rename
-func (env Env) SetUpGlobals() {
+func (env *Env) SetUpGlobals() {
 
 	var err error
 	env.Cwd, err = os.Getwd()
