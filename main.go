@@ -42,9 +42,9 @@ func appendToFile(fileName string, items ...string) {
 	crash(err)
 }
 
-func fetch(url string) {
+func (env Env) fetch(url string) {
 	log.Printf("fetching %s\n", url)
-	Cd(DistfilesPath)
+	Cd(env.DistfilesPath)
 
 	// Get the data
 	resp, err := http.Get(url)
@@ -60,7 +60,7 @@ func fetch(url string) {
 	_, err = io.Copy(out, resp.Body)
 	crash(err)
 
-	Cd(Cwd)
+	Cd(env.Cwd)
 }
 
 func packageVersion(url string) string {
@@ -81,63 +81,65 @@ func packageVersion(url string) string {
 	return result
 }
 
-func extract(url string) {
+func (env Env) extract(url string) {
 
-	expetedTarPath := path.Join(DistfilesPath, path.Base(url))
+	expetedTarPath := path.Join(env.DistfilesPath, path.Base(url))
 	if _, err := os.Stat(expetedTarPath); os.IsNotExist(err) {
-		fetch(url)
+		env.fetch(url)
 	}
 
-	extractedSourcePath := path.Join(BuildPath, packageVersion(url))
+	extractedSourcePath := path.Join(env.BuildPath, packageVersion(url))
 	if _, err := os.Stat(extractedSourcePath); os.IsNotExist(err) {
-		tarballPath := path.Join(DistfilesPath, path.Base(url))
-		Tar("xf", tarballPath, "-C", BuildPath)
+		tarballPath := path.Join(env.DistfilesPath, path.Base(url))
+		Tar("xf", tarballPath, "-C", env.BuildPath)
 	}
 
 	Cd(extractedSourcePath)
 }
 
-// Cwd we remeber cwd in order to get back here
-var Cwd string
+type Env struct {
+	// Cwd we remeber cwd in order to get back here
+	Cwd string
 
-// DistfilesPath is where all distfiles are stored
-var DistfilesPath string
+	// DistfilesPath is where all distfiles are stored
+	DistfilesPath string
 
-// BuildPath is where all the work is done
-var BuildPath string
+	// BuildPath is where all the work is done
+	BuildPath string
 
-// PkgPath is where binary packages get stored
-var PkgPath string
+	// PkgPath is where binary packages get stored
+	PkgPath string
 
-// InstallPrefix prefix is where we are all going to install things for new system
-var InstallPrefix string
+	// InstallPrefix prefix is where we are all going to install things for new system
+	InstallPrefix string
+}
 
-func setUpGlobals() {
+func (env Env) setUpGlobals() {
 
 	var err error
-	Cwd, err = os.Getwd()
+	env.Cwd, err = os.Getwd()
 	crash(err)
 
-	DistfilesPath = path.Join(Cwd, "distfiles")
-	err = os.MkdirAll(DistfilesPath, os.ModePerm)
+	env.DistfilesPath = path.Join(env.Cwd, "distfiles")
+	err = os.MkdirAll(env.DistfilesPath, os.ModePerm)
 	crash(err)
 
-	BuildPath = path.Join(Cwd, "build")
-	err = os.MkdirAll(BuildPath, os.ModePerm)
+	env.BuildPath = path.Join(env.Cwd, "build")
+	err = os.MkdirAll(env.BuildPath, os.ModePerm)
 	crash(err)
 
-	PkgPath = path.Join(Cwd, "package")
-	err = os.MkdirAll(PkgPath, os.ModePerm)
+	env.PkgPath = path.Join(env.Cwd, "package")
+	err = os.MkdirAll(env.PkgPath, os.ModePerm)
 	crash(err)
 
-	InstallPrefix = path.Join(Cwd, "newroot")
-	err = os.MkdirAll(InstallPrefix, os.ModePerm)
+	env.InstallPrefix = path.Join(env.Cwd, "newroot")
+	err = os.MkdirAll(env.InstallPrefix, os.ModePerm)
 	crash(err)
 
 }
 
-func installSimple(url string) {
-	installConfigure(url, func() {
+func (env Env) installSimple(url string) {
+	env.installConfigure(url, func() {
 		DotConfigure("--prefix=/usr")
 	})
 }
@@ -145,8 +147,8 @@ func installSimple(url string) {
 //TODO detect
 const NumberOfMakeJobs = "-j8"
 
-func installConfigure(url string, configure func()) {
-	installBuildInstall(url, func() {
+func (env Env) installConfigure(url string, configure func()) {
+	env.installBuildInstall(url, func() {
 		configure()
 
 		Make(NumberOfMakeJobs)
@@ -156,45 +158,46 @@ func installConfigure(url string, configure func()) {
 }
 
 // stupid name, but what can you do
-func installBuildInstall(url string, build func(), install func(string)) {
-	tarBall := path.Join(PkgPath, packageVersion(url)+".tar.xz")
+func (env Env) installBuildInstall(url string, build func(), install func(string)) {
+	tarBall := path.Join(env.PkgPath, packageVersion(url)+".tar.xz")
 
 	if _, err := os.Stat(tarBall); os.IsNotExist(err) {
-		extract(url)
-		sourceDir := path.Join(BuildPath, packageVersion(url))
+		env.extract(url)
+		sourceDir := path.Join(env.BuildPath, packageVersion(url))
 
 		build()
 
 		// Part of packaging
-		destDir := path.Join(BuildPath, packageVersion(url)+"-package")
+		destDir := path.Join(env.BuildPath, packageVersion(url)+"-package")
 		install(destDir)
 		Tar("cf", tarBall, "-C", destDir, ".")
-		Cd(Cwd)
+		Cd(env.Cwd)
 		Rm("-rf", destDir)
 		Rm("-rf", sourceDir)
 	}
 
 	//TODO also dont do this if its already installed eg need some way of tracking those
 	//TODO replace with desired prefix
-	Tar("xf", tarBall, "-C", InstallPrefix)
+	Tar("xf", tarBall, "-C", env.InstallPrefix)
 }
 
 func main() {
-	setUpGlobals()
+	env := Env{}
+	env.setUpGlobals()
 
 	enterChroot := flag.Bool("c", false, "enter chroot")
 	flag.Parse()
 
-	Mkdir("-p", path.Join(InstallPrefix, "etc"))
-	Mkdir("-p", path.Join(InstallPrefix, "tmp"))
-	Mkdir("-p", path.Join(InstallPrefix, "dev"))
-	Mkdir("-p", path.Join(InstallPrefix, "sys"))
-	Mkdir("-p", path.Join(InstallPrefix, "run"))
-	Mkdir("-p", path.Join(InstallPrefix, "root"))
-	Mkdir("-p", path.Join(InstallPrefix, "proc"))
+	Mkdir("-p", path.Join(env.InstallPrefix, "etc"))
+	Mkdir("-p", path.Join(env.InstallPrefix, "tmp"))
+	Mkdir("-p", path.Join(env.InstallPrefix, "dev"))
+	Mkdir("-p", path.Join(env.InstallPrefix, "sys"))
+	Mkdir("-p", path.Join(env.InstallPrefix, "run"))
+	Mkdir("-p", path.Join(env.InstallPrefix, "root"))
+	Mkdir("-p", path.Join(env.InstallPrefix, "proc"))
 
-	createFile(path.Join(InstallPrefix, "etc/passwd"), "root::0:0:root:/root:/bin/bash\n")
-	createFile(path.Join(InstallPrefix, "etc/group"),
+	createFile(path.Join(env.InstallPrefix, "etc/passwd"), "root::0:0:root:/root:/bin/bash\n")
+	createFile(path.Join(env.InstallPrefix, "etc/group"),
 		`
 root:x:0:
 bin:x:1:
@@ -215,7 +218,7 @@ usb:x:14:
 
 	//TODO need some sort of createFile rather than append, so that doesnt do it if file is already
 	// there
-	createFile(path.Join(InstallPrefix, "etc/fstab"), `
+	createFile(path.Join(env.InstallPrefix, "etc/fstab"), `
 # Begin /etc/fstab
 
 # file system  mount-point  type     options             dump  fsck
@@ -232,7 +235,7 @@ devtmpfs       /dev         devtmpfs mode=0755,nosuid    0     0
 
 	linuxKernelSourcesURL := "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz"
 
-	installBuildInstall("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
+	env.installBuildInstall("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
 		Mkdir("build")
 		Cd("build")
 		DotDotConfigure("--prefix=/usr",
@@ -268,13 +271,13 @@ rpc: files
 		ioutil.WriteFile("etc/nsswitch.conf", []byte(nssContent), os.ModePerm)
 	})
 
-	installSimple("https://zlib.net/zlib-1.2.11.tar.xz")
-	installSimple("http://ftp.astron.com/pub/file/file-5.37.tar.gz")
-	installSimple("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
+	env.installSimple("https://zlib.net/zlib-1.2.11.tar.xz")
+	env.installSimple("http://ftp.astron.com/pub/file/file-5.37.tar.gz")
+	env.installSimple("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
 	//m4 skipping for now
 	//bc skipping as well
 
-	installConfigure("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
+	env.installConfigure("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
 		Mkdir("build")
 		Cd("build")
 		DotDotConfigure("--prefix=/usr",
@@ -287,11 +290,11 @@ rpc: files
 			"--with-system-zlib")
 	})
 
-	installConfigure("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
+	env.installConfigure("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
 		//TODO less hardcoded versions
-		extract("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
-		extract("https://www.mpfr.org/mpfr-4.0.2/mpfr-4.0.2.tar.xz")
-		extract("https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz")
+		env.extract("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
+		env.extract("https://www.mpfr.org/mpfr-4.0.2/mpfr-4.0.2.tar.xz")
+		env.extract("https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz")
 
 		//TODO less
 		Cd("../gcc-9.2.0")
@@ -308,17 +311,17 @@ rpc: files
 			"--with-system-zlib")
 	})
 
-	installConfigure("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
+	env.installConfigure("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--with-internal-glib",
 			"--disable-host-tool")
 	})
 
-	installConfigure("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
+	env.installConfigure("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
 		DotConfigure("--prefix=/usr", "--bindir=/bin", "--disable-perl-regexp")
 	})
 
-	installConfigure("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
+	env.installConfigure("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--mandir=/usr/share/man",
 			"--with-shared",
@@ -328,7 +331,7 @@ rpc: files
 			"--enable-widec")
 	})
 
-	installBuildInstall("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
+	env.installBuildInstall("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--docdir=/usr/share/doc/bash-5.0",
 			"--without-bash-malloc",
@@ -342,20 +345,20 @@ rpc: files
 		Ln("-s", "/bin/bash", "bin/sh")
 	})
 
-	installSimple("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
+	env.installSimple("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
 
-	installConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
+	env.installConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
 		Exec("bash", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' gl/lib/*.c")
 		Exec("bash", "-c", "sed -i '/unistd/a #include <sys/sysmacros.h>' gl/lib/mountlist.c")
 		appendToFile("gl/lib/stdio-impl.h", "#define _IO_IN_BACKUP 0x100")
 		DotConfigure("--prefix=/usr", "--localstatedir=/var/lib/locate")
 	})
 
-	installSimple("http://www.greenwoodsoftware.com/less/less-551.tar.gz")
-	installSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
-	installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
+	env.installSimple("http://www.greenwoodsoftware.com/less/less-551.tar.gz")
+	env.installSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
+	env.installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
 
-	installConfigure("https://nchc.dl.sourceforge.net/project/procps-ng/Production/procps-ng-3.3.15.tar.xz", func() {
+	env.installConfigure("https://nchc.dl.sourceforge.net/project/procps-ng/Production/procps-ng-3.3.15.tar.xz", func() {
 		DotConfigure("--prefix=/usr",
 			"--exec-prefix=",
 			"--libdir=/usr/lib",
@@ -364,7 +367,7 @@ rpc: files
 			"--disable-kill")
 	})
 
-	installConfigure("https://www.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz", func() {
+	env.installConfigure("https://www.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz", func() {
 		DotConfigure("--docdir=/usr/share/doc/util-linux-2.34",
 			"--disable-chfn-chsh",
 			"--disable-login",
@@ -382,30 +385,30 @@ rpc: files
 		)
 	})
 
-	installSimple("http://ftp.gnu.org/gnu/gettext/gettext-0.20.1.tar.xz")
-	installSimple("http://ftp.gnu.org/gnu/gawk/gawk-5.0.1.tar.xz")
-	installSimple("http://ftp.gnu.org/gnu/bison/bison-3.5.tar.xz")
-	installConfigure("http://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz", func() {
+	env.installSimple("http://ftp.gnu.org/gnu/gettext/gettext-0.20.1.tar.xz")
+	env.installSimple("http://ftp.gnu.org/gnu/gawk/gawk-5.0.1.tar.xz")
+	env.installSimple("http://ftp.gnu.org/gnu/bison/bison-3.5.tar.xz")
+	env.installConfigure("http://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz", func() {
 		Exec("sh", "-c", "sed -i '211,217 d; 219,229 d; 232 d' glob/glob.c")
 		DotConfigure("--prefix=/usr")
 	})
 
-	installConfigure("http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz", func() {
+	env.installConfigure("http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz", func() {
 		Exec("sh", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' lib/*.c")
 		Exec("sh", "-c", "echo \"#define _IO_IN_BACKUP 0x100\" >> lib/stdio-impl.h")
 		DotConfigure("--prefix=/usr")
 	})
 
-	installSimple("http://ftp.gnu.org/gnu/gzip/gzip-1.10.tar.xz")
+	env.installSimple("http://ftp.gnu.org/gnu/gzip/gzip-1.10.tar.xz")
 
 	// looks like we need this to bootstrap glibc
-	installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
+	env.installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
 
-	installConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
+	env.installConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
 		DotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
 	})
 
-	installConfigure("http://ftp.gnu.org/gnu/inetutils/inetutils-1.9.4.tar.xz", func() {
+	env.installConfigure("http://ftp.gnu.org/gnu/inetutils/inetutils-1.9.4.tar.xz", func() {
 		DotConfigure("--prefix=/usr",
 			"--localstatedir=/var",
 			"--disable-logger",
@@ -417,21 +420,21 @@ rpc: files
 			"--disable-servers")
 	})
 
-	installConfigure("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
+	env.installConfigure("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
 		DotConfigure("--prefix=/usr")
 	})
 
-	installConfigure("https://roy.marples.name/downloads/dhcpcd/dhcpcd-8.1.4.tar.xz", func() {
+	env.installConfigure("https://roy.marples.name/downloads/dhcpcd/dhcpcd-8.1.4.tar.xz", func() {
 		DotConfigure("--libexecdir=/lib/dhcpcd", "--dbdir=/var/lib/dhcpcd")
 	})
 
-	installBuildInstall(linuxKernelSourcesURL, func() {
+	env.installBuildInstall(linuxKernelSourcesURL, func() {
 
 		// zfs has very slow configure time, so disabling it until i get to zfs on root
 		enableZFS := false
 
 		if enableZFS {
-			extract("https://github.com/zfsonlinux/zfs/releases/download/zfs-0.8.2/zfs-0.8.2.tar.gz")
+			env.extract("https://github.com/zfsonlinux/zfs/releases/download/zfs-0.8.2/zfs-0.8.2.tar.gz")
 			DotConfigure("--enable-linux-builtin")
 			Make(NumberOfMakeJobs)
 			Exec("./copy-builtin", "../linux-5.4.6")
@@ -463,14 +466,14 @@ rpc: files
 	//TODO also package this so that we dont rebuild everything everytime
 	Cd("minit")
 	Exec("go", "build", "minit.go")
-	Mv("minit", path.Join(InstallPrefix, "sbin/minit"))
+	Mv("minit", path.Join(env.InstallPrefix, "sbin/minit"))
 
 	// Dev tools
 	//	installConfigure("https://www.kernel.org/pub/software/scm/git/git-2.24.1.tar.xz", func() {
 	//		dotConfigure("--prefix=/usr", "--without-tcltk")
 	//	})
 
-	installConfigure("https://www.openssl.org/source/openssl-1.1.1c.tar.gz", func() {
+	env.installConfigure("https://www.openssl.org/source/openssl-1.1.1c.tar.gz", func() {
 		Exec("./config", "--prefix=/usr",
 			"--openssldir=/etc/ssl",
 			"--libdir=lib",
@@ -478,18 +481,18 @@ rpc: files
 			"zlib-dynamic")
 	})
 
-	installSimple("https://curl.haxx.se/download/curl-7.67.0.tar.xz")
-	installSimple("http://ftp.gnu.org/gnu/tar/tar-1.32.tar.xz")
-	installSimple("https://nchc.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz")
+	env.installSimple("https://curl.haxx.se/download/curl-7.67.0.tar.xz")
+	env.installSimple("http://ftp.gnu.org/gnu/tar/tar-1.32.tar.xz")
+	env.installSimple("https://nchc.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz")
 
 	if *enterChroot {
 		log.Printf("Entering chroot !!!!!!")
-		Cd(Cwd)
+		Cd(env.Cwd)
 		Exec("go", "build", "main.go")
-		Exec("cp", "/etc/resolv.conf", path.Join(InstallPrefix, "etc"))
-		Mv("main", path.Join(InstallPrefix, "root"))
-		ExecInteractive("sudo", "mount", "--bind", "/dev", path.Join(InstallPrefix, "dev"))
-		ExecInteractive("sudo", "chroot", InstallPrefix, "/root/main")
+		Exec("cp", "/etc/resolv.conf", path.Join(env.InstallPrefix, "etc"))
+		Mv("main", path.Join(env.InstallPrefix, "root"))
+		ExecInteractive("sudo", "mount", "--bind", "/dev", path.Join(env.InstallPrefix, "dev"))
+		ExecInteractive("sudo", "chroot", env.InstallPrefix, "/root/main")
 		os.Exit(1)
 	}
 
