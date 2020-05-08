@@ -60,7 +60,7 @@ func packageVersion(url string) string {
 
 func mainFunction() {
 	env := Env{}
-	env.setUpGlobals()
+	env.SetUpGlobals()
 
 	enterChroot := flag.Bool("c", false, "enter chroot")
 	flag.Parse()
@@ -148,9 +148,9 @@ rpc: files
 		ioutil.WriteFile("etc/nsswitch.conf", []byte(nssContent), os.ModePerm)
 	})
 
-	env.installSimple("https://zlib.net/zlib-1.2.11.tar.xz")
-	env.installSimple("http://ftp.astron.com/pub/file/file-5.37.tar.gz")
-	env.installSimple("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
+	env.InstallSimple("https://zlib.net/zlib-1.2.11.tar.xz")
+	env.InstallSimple("http://ftp.astron.com/pub/file/file-5.37.tar.gz")
+	env.InstallSimple("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
 	//m4 skipping for now
 	//bc skipping as well
 
@@ -222,7 +222,7 @@ rpc: files
 		Ln("-s", "/bin/bash", "bin/sh")
 	})
 
-	env.installSimple("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
+	env.InstallSimple("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
 
 	env.installConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
 		Exec("bash", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' gl/lib/*.c")
@@ -231,9 +231,9 @@ rpc: files
 		DotConfigure("--prefix=/usr", "--localstatedir=/var/lib/locate")
 	})
 
-	env.installSimple("http://www.greenwoodsoftware.com/less/less-551.tar.gz")
-	env.installSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
-	env.installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
+	env.InstallSimple("http://www.greenwoodsoftware.com/less/less-551.tar.gz")
+	env.InstallSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
+	env.InstallSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
 
 	env.installConfigure("https://nchc.dl.sourceforge.net/project/procps-ng/Production/procps-ng-3.3.15.tar.xz", func() {
 		DotConfigure("--prefix=/usr",
@@ -262,9 +262,9 @@ rpc: files
 		)
 	})
 
-	env.installSimple("http://ftp.gnu.org/gnu/gettext/gettext-0.20.1.tar.xz")
-	env.installSimple("http://ftp.gnu.org/gnu/gawk/gawk-5.0.1.tar.xz")
-	env.installSimple("http://ftp.gnu.org/gnu/bison/bison-3.5.tar.xz")
+	env.InstallSimple("http://ftp.gnu.org/gnu/gettext/gettext-0.20.1.tar.xz")
+	env.InstallSimple("http://ftp.gnu.org/gnu/gawk/gawk-5.0.1.tar.xz")
+	env.InstallSimple("http://ftp.gnu.org/gnu/bison/bison-3.5.tar.xz")
 	env.installConfigure("http://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz", func() {
 		Exec("sh", "-c", "sed -i '211,217 d; 219,229 d; 232 d' glob/glob.c")
 		DotConfigure("--prefix=/usr")
@@ -276,10 +276,10 @@ rpc: files
 		DotConfigure("--prefix=/usr")
 	})
 
-	env.installSimple("http://ftp.gnu.org/gnu/gzip/gzip-1.10.tar.xz")
+	env.InstallSimple("http://ftp.gnu.org/gnu/gzip/gzip-1.10.tar.xz")
 
 	// looks like we need this to bootstrap glibc
-	env.installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
+	env.InstallSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
 
 	env.installConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
 		DotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
@@ -358,9 +358,9 @@ rpc: files
 			"zlib-dynamic")
 	})
 
-	env.installSimple("https://curl.haxx.se/download/curl-7.67.0.tar.xz")
-	env.installSimple("http://ftp.gnu.org/gnu/tar/tar-1.32.tar.xz")
-	env.installSimple("https://nchc.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz")
+	env.InstallSimple("https://curl.haxx.se/download/curl-7.67.0.tar.xz")
+	env.InstallSimple("http://ftp.gnu.org/gnu/tar/tar-1.32.tar.xz")
+	env.InstallSimple("https://nchc.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz")
 
 	if *enterChroot {
 		log.Printf("Entering chroot !!!!!!")

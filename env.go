@@ -26,7 +26,8 @@ type Env struct {
 	InstallPrefix string
 }
 
-func (env Env) setUpGlobals() {
+//TODO rename
+func (env Env) SetUpGlobals() {
 
 	var err error
 	env.Cwd, err = os.Getwd()
@@ -87,12 +88,6 @@ func (env Env) extract(url string) {
 	Cd(extractedSourcePath)
 }
 
-func (env Env) installSimple(url string) {
-	env.installConfigure(url, func() {
-		DotConfigure("--prefix=/usr")
-	})
-}
-
 //TODO detect
 const NumberOfMakeJobs = "-j8"
 
@@ -128,4 +123,10 @@ func (env Env) installBuildInstall(url string, build func(), install func(string
 	//TODO also dont do this if its already installed eg need some way of tracking those
 	//TODO replace with desired prefix
 	Tar("xf", tarBall, "-C", env.InstallPrefix)
+}
+
+func (env Env) InstallSimple(url string) {
+	env.installConfigure(url, func() {
+		DotConfigure("--prefix=/usr")
+	})
 }
