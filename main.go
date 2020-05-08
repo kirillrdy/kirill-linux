@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"flag"
+	. "github.com/kirillrdy/kirill-linux/shell"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,6 +13,7 @@ import (
 	"strings"
 )
 
+//TODO have some sort of same thing
 func crash(err error) {
 	if err != nil {
 		log.Panic(err)
@@ -42,19 +43,6 @@ func appendToFile(fileName string, items ...string) {
 	crash(err)
 }
 
-func execCmd(cmd string, args ...string) {
-	log.Printf("%s %s", cmd, args)
-	command := exec.Command(cmd, args...)
-	var buffer bytes.Buffer
-	command.Stdout = &buffer
-	command.Stderr = &buffer
-	err := command.Run()
-	if err != nil {
-		log.Print(buffer.String())
-	}
-	crash(err)
-}
-
 func execCmdInteractive(cmd string, args ...string) {
 	log.Printf("%s %s", cmd, args)
 	command := exec.Command(cmd, args...)
@@ -65,50 +53,9 @@ func execCmdInteractive(cmd string, args ...string) {
 	crash(err)
 }
 
-func curl(args ...string) {
-	execCmd("curl", args...)
-}
-
-func mkdir(args ...string) {
-	execCmd("mkdir", args...)
-}
-
-func tar(args ...string) {
-	execCmd("tar", args...)
-}
-
-func make(args ...string) {
-	execCmd("make", args...)
-}
-
-func rm(args ...string) {
-	execCmd("rm", args...)
-}
-
-func mv(args ...string) {
-	execCmd("mv", args...)
-}
-
-func ln(args ...string) {
-	execCmd("ln", args...)
-}
-
-func dotConfigure(args ...string) {
-	execCmd("./configure", args...)
-}
-
-func dotDotConfigure(args ...string) {
-	execCmd("../configure", args...)
-}
-
-func cd(dir string) {
-	log.Printf("cd %s", dir)
-	os.Chdir(dir)
-}
-
 func fetch(url string) {
 	log.Printf("fetching %s\n", url)
-	cd(DistfilesPath)
+	Cd(DistfilesPath)
 
 	// Get the data
 	resp, err := http.Get(url)
@@ -124,7 +71,7 @@ func fetch(url string) {
 	_, err = io.Copy(out, resp.Body)
 	crash(err)
 
-	cd(Cwd)
+	Cd(Cwd)
 }
 
 func packageVersion(url string) string {
@@ -155,10 +102,10 @@ func extract(url string) {
 	extractedSourcePath := path.Join(BuildPath, packageVersion(url))
 	if _, err := os.Stat(extractedSourcePath); os.IsNotExist(err) {
 		tarballPath := path.Join(DistfilesPath, path.Base(url))
-		tar("xf", tarballPath, "-C", BuildPath)
+		Tar("xf", tarballPath, "-C", BuildPath)
 	}
 
-	cd(extractedSourcePath)
+	Cd(extractedSourcePath)
 }
 
 // Cwd we remeber cwd in order to get back here
@@ -202,7 +149,7 @@ func setUpGlobals() {
 
 func installSimple(url string) {
 	installConfigure(url, func() {
-		dotConfigure("--prefix=/usr")
+		DotConfigure("--prefix=/usr")
 	})
 }
 
@@ -213,9 +160,9 @@ func installConfigure(url string, configure func()) {
 	installBuildInstall(url, func() {
 		configure()
 
-		make(NumberOfMakeJobs)
+		Make(NumberOfMakeJobs)
 	}, func(destDir string) {
-		make("install", "DESTDIR="+destDir)
+		Make("install", "DESTDIR="+destDir)
 	})
 }
 
@@ -232,15 +179,15 @@ func installBuildInstall(url string, build func(), install func(string)) {
 		// Part of packaging
 		destDir := path.Join(BuildPath, packageVersion(url)+"-package")
 		install(destDir)
-		tar("cf", tarBall, "-C", destDir, ".")
-		cd(Cwd)
-		rm("-rf", destDir)
-		rm("-rf", sourceDir)
+		Tar("cf", tarBall, "-C", destDir, ".")
+		Cd(Cwd)
+		Rm("-rf", destDir)
+		Rm("-rf", sourceDir)
 	}
 
 	//TODO also dont do this if its already installed eg need some way of tracking those
 	//TODO replace with desired prefix
-	tar("xf", tarBall, "-C", InstallPrefix)
+	Tar("xf", tarBall, "-C", InstallPrefix)
 }
 
 func main() {
@@ -249,13 +196,13 @@ func main() {
 	enterChroot := flag.Bool("c", false, "enter chroot")
 	flag.Parse()
 
-	mkdir("-p", path.Join(InstallPrefix, "etc"))
-	mkdir("-p", path.Join(InstallPrefix, "tmp"))
-	mkdir("-p", path.Join(InstallPrefix, "dev"))
-	mkdir("-p", path.Join(InstallPrefix, "sys"))
-	mkdir("-p", path.Join(InstallPrefix, "run"))
-	mkdir("-p", path.Join(InstallPrefix, "root"))
-	mkdir("-p", path.Join(InstallPrefix, "proc"))
+	Mkdir("-p", path.Join(InstallPrefix, "etc"))
+	Mkdir("-p", path.Join(InstallPrefix, "tmp"))
+	Mkdir("-p", path.Join(InstallPrefix, "dev"))
+	Mkdir("-p", path.Join(InstallPrefix, "sys"))
+	Mkdir("-p", path.Join(InstallPrefix, "run"))
+	Mkdir("-p", path.Join(InstallPrefix, "root"))
+	Mkdir("-p", path.Join(InstallPrefix, "proc"))
 
 	createFile(path.Join(InstallPrefix, "etc/passwd"), "root::0:0:root:/root:/bin/bash\n")
 	createFile(path.Join(InstallPrefix, "etc/group"),
@@ -297,20 +244,20 @@ devtmpfs       /dev         devtmpfs mode=0755,nosuid    0     0
 	linuxKernelSourcesURL := "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz"
 
 	installBuildInstall("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
-		mkdir("build")
-		cd("build")
-		dotDotConfigure("--prefix=/usr",
+		Mkdir("build")
+		Cd("build")
+		DotDotConfigure("--prefix=/usr",
 			"--disable-werror",
 			"--enable-kernel=3.2",
 			"--enable-stack-protector=strong",
 			"--with-headers=/usr/include",
 			"libc_cv_slibdir=/lib")
-		make(NumberOfMakeJobs)
+		Make(NumberOfMakeJobs)
 	}, func(destDir string) {
-		make("install", "DESTDIR="+destDir)
-		cd(destDir)
+		Make("install", "DESTDIR="+destDir)
+		Cd(destDir)
 		//TODO need a better longterm solution
-		ln("-s", "lib", "lib64")
+		Ln("-s", "lib", "lib64")
 		ioutil.WriteFile("etc/ld.so.conf", []byte("/usr/local/lib\n/opt/lib\n"), os.ModePerm)
 		nssContent := `
 # Begin /etc/nsswitch.conf
@@ -339,9 +286,9 @@ rpc: files
 	//bc skipping as well
 
 	installConfigure("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
-		mkdir("build")
-		cd("build")
-		dotDotConfigure("--prefix=/usr",
+		Mkdir("build")
+		Cd("build")
+		DotDotConfigure("--prefix=/usr",
 			"--enable-gold",
 			"--enable-ld=default",
 			"--enable-plugins",
@@ -358,14 +305,14 @@ rpc: files
 		extract("https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz")
 
 		//TODO less
-		cd("../gcc-9.2.0")
-		mv("../gmp-6.1.2", "gmp")
-		mv("../mpfr-4.0.2", "mpfr")
-		mv("../mpc-1.1.0", "mpc")
+		Cd("../gcc-9.2.0")
+		Mv("../gmp-6.1.2", "gmp")
+		Mv("../mpfr-4.0.2", "mpfr")
+		Mv("../mpc-1.1.0", "mpc")
 
-		mkdir("build")
-		cd("build")
-		dotDotConfigure("--prefix=/usr",
+		Mkdir("build")
+		Cd("build")
+		DotDotConfigure("--prefix=/usr",
 			"--enable-languages=c,c++,go",
 			"--disable-multilib",
 			"--disable-bootstrap",
@@ -373,17 +320,17 @@ rpc: files
 	})
 
 	installConfigure("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
-		dotConfigure("--prefix=/usr",
+		DotConfigure("--prefix=/usr",
 			"--with-internal-glib",
 			"--disable-host-tool")
 	})
 
 	installConfigure("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
-		dotConfigure("--prefix=/usr", "--bindir=/bin", "--disable-perl-regexp")
+		DotConfigure("--prefix=/usr", "--bindir=/bin", "--disable-perl-regexp")
 	})
 
 	installConfigure("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
-		dotConfigure("--prefix=/usr",
+		DotConfigure("--prefix=/usr",
 			"--mandir=/usr/share/man",
 			"--with-shared",
 			"--without-debug",
@@ -393,26 +340,26 @@ rpc: files
 	})
 
 	installBuildInstall("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
-		dotConfigure("--prefix=/usr",
+		DotConfigure("--prefix=/usr",
 			"--docdir=/usr/share/doc/bash-5.0",
 			"--without-bash-malloc",
 			"--with-installed-readline")
-		make(NumberOfMakeJobs)
+		Make(NumberOfMakeJobs)
 	}, func(destDir string) {
-		make("install", "DESTDIR="+destDir)
-		cd(destDir)
-		mkdir("bin")
-		mv("usr/bin/bash", "bin/bash")
-		ln("-s", "/bin/bash", "bin/sh")
+		Make("install", "DESTDIR="+destDir)
+		Cd(destDir)
+		Mkdir("bin")
+		Mv("usr/bin/bash", "bin/bash")
+		Ln("-s", "/bin/bash", "bin/sh")
 	})
 
 	installSimple("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
 
 	installConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
-		execCmd("bash", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' gl/lib/*.c")
-		execCmd("bash", "-c", "sed -i '/unistd/a #include <sys/sysmacros.h>' gl/lib/mountlist.c")
+		Exec("bash", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' gl/lib/*.c")
+		Exec("bash", "-c", "sed -i '/unistd/a #include <sys/sysmacros.h>' gl/lib/mountlist.c")
 		appendToFile("gl/lib/stdio-impl.h", "#define _IO_IN_BACKUP 0x100")
-		dotConfigure("--prefix=/usr", "--localstatedir=/var/lib/locate")
+		DotConfigure("--prefix=/usr", "--localstatedir=/var/lib/locate")
 	})
 
 	installSimple("http://www.greenwoodsoftware.com/less/less-551.tar.gz")
@@ -420,7 +367,7 @@ rpc: files
 	installSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
 
 	installConfigure("https://nchc.dl.sourceforge.net/project/procps-ng/Production/procps-ng-3.3.15.tar.xz", func() {
-		dotConfigure("--prefix=/usr",
+		DotConfigure("--prefix=/usr",
 			"--exec-prefix=",
 			"--libdir=/usr/lib",
 			"--docdir=/usr/share/doc/procps-ng-3.3.15",
@@ -429,7 +376,7 @@ rpc: files
 	})
 
 	installConfigure("https://www.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz", func() {
-		dotConfigure("--docdir=/usr/share/doc/util-linux-2.34",
+		DotConfigure("--docdir=/usr/share/doc/util-linux-2.34",
 			"--disable-chfn-chsh",
 			"--disable-login",
 			"--disable-nologin",
@@ -450,14 +397,14 @@ rpc: files
 	installSimple("http://ftp.gnu.org/gnu/gawk/gawk-5.0.1.tar.xz")
 	installSimple("http://ftp.gnu.org/gnu/bison/bison-3.5.tar.xz")
 	installConfigure("http://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz", func() {
-		execCmd("sh", "-c", "sed -i '211,217 d; 219,229 d; 232 d' glob/glob.c")
-		dotConfigure("--prefix=/usr")
+		Exec("sh", "-c", "sed -i '211,217 d; 219,229 d; 232 d' glob/glob.c")
+		DotConfigure("--prefix=/usr")
 	})
 
 	installConfigure("http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz", func() {
-		execCmd("sh", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' lib/*.c")
-		execCmd("sh", "-c", "echo \"#define _IO_IN_BACKUP 0x100\" >> lib/stdio-impl.h")
-		dotConfigure("--prefix=/usr")
+		Exec("sh", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' lib/*.c")
+		Exec("sh", "-c", "echo \"#define _IO_IN_BACKUP 0x100\" >> lib/stdio-impl.h")
+		DotConfigure("--prefix=/usr")
 	})
 
 	installSimple("http://ftp.gnu.org/gnu/gzip/gzip-1.10.tar.xz")
@@ -466,11 +413,11 @@ rpc: files
 	installSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
 
 	installConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
-		dotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
+		DotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
 	})
 
 	installConfigure("http://ftp.gnu.org/gnu/inetutils/inetutils-1.9.4.tar.xz", func() {
-		dotConfigure("--prefix=/usr",
+		DotConfigure("--prefix=/usr",
 			"--localstatedir=/var",
 			"--disable-logger",
 			"--disable-whois",
@@ -482,11 +429,11 @@ rpc: files
 	})
 
 	installConfigure("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
-		dotConfigure("--prefix=/usr")
+		DotConfigure("--prefix=/usr")
 	})
 
 	installConfigure("https://roy.marples.name/downloads/dhcpcd/dhcpcd-8.1.4.tar.xz", func() {
-		dotConfigure("--libexecdir=/lib/dhcpcd", "--dbdir=/var/lib/dhcpcd")
+		DotConfigure("--libexecdir=/lib/dhcpcd", "--dbdir=/var/lib/dhcpcd")
 	})
 
 	installBuildInstall(linuxKernelSourcesURL, func() {
@@ -496,13 +443,13 @@ rpc: files
 
 		if enableZFS {
 			extract("https://github.com/zfsonlinux/zfs/releases/download/zfs-0.8.2/zfs-0.8.2.tar.gz")
-			dotConfigure("--enable-linux-builtin")
-			make(NumberOfMakeJobs)
-			execCmd("./copy-builtin", "../linux-5.4.6")
-			cd("../linux-5.4.6")
-			rm("-rfv", "../zfs-0.8.2")
+			DotConfigure("--enable-linux-builtin")
+			Make(NumberOfMakeJobs)
+			Exec("./copy-builtin", "../linux-5.4.6")
+			Cd("../linux-5.4.6")
+			Rm("-rfv", "../zfs-0.8.2")
 		}
-		make("defconfig")
+		Make("defconfig")
 		if enableZFS {
 			appendToFile(".config", "CONFIG_ZFS=y")
 		}
@@ -512,22 +459,22 @@ rpc: files
 			"CONFIG_DRM_NOUVEAU=y",
 		)
 
-		make(NumberOfMakeJobs)
+		Make(NumberOfMakeJobs)
 	}, func(destDir string) {
 		//TODO dont forget modules as well
-		mkdir("-p", path.Join(destDir, "/boot/efi/EFI/boot"))
-		mv("arch/x86/boot/bzImage", path.Join(destDir, "/boot/efi/EFI/boot/bootx64.efi"))
+		Mkdir("-p", path.Join(destDir, "/boot/efi/EFI/boot"))
+		Mv("arch/x86/boot/bzImage", path.Join(destDir, "/boot/efi/EFI/boot/bootx64.efi"))
 
-		make("headers")
-		mkdir("-p", path.Join(destDir, "usr"))
-		mv("usr/include", path.Join(destDir, "usr/"))
+		Make("headers")
+		Mkdir("-p", path.Join(destDir, "usr"))
+		Mv("usr/include", path.Join(destDir, "usr/"))
 
 	})
 
 	//TODO also package this so that we dont rebuild everything everytime
-	cd("minit")
-	execCmd("go", "build", "minit.go")
-	mv("minit", path.Join(InstallPrefix, "sbin/minit"))
+	Cd("minit")
+	Exec("go", "build", "minit.go")
+	Mv("minit", path.Join(InstallPrefix, "sbin/minit"))
 
 	// Dev tools
 	//	installConfigure("https://www.kernel.org/pub/software/scm/git/git-2.24.1.tar.xz", func() {
@@ -535,7 +482,7 @@ rpc: files
 	//	})
 
 	installConfigure("https://www.openssl.org/source/openssl-1.1.1c.tar.gz", func() {
-		execCmd("./config", "--prefix=/usr",
+		Exec("./config", "--prefix=/usr",
 			"--openssldir=/etc/ssl",
 			"--libdir=lib",
 			"shared",
@@ -548,10 +495,10 @@ rpc: files
 
 	if *enterChroot {
 		log.Printf("Entering chroot !!!!!!")
-		cd(Cwd)
-		execCmd("go", "build", "main.go")
-		execCmd("cp", "/etc/resolv.conf", path.Join(InstallPrefix, "etc"))
-		mv("main", path.Join(InstallPrefix, "root"))
+		Cd(Cwd)
+		Exec("go", "build", "main.go")
+		Exec("cp", "/etc/resolv.conf", path.Join(InstallPrefix, "etc"))
+		Mv("main", path.Join(InstallPrefix, "root"))
 		execCmdInteractive("sudo", "mount", "--bind", "/dev", path.Join(InstallPrefix, "dev"))
 		execCmdInteractive("sudo", "chroot", InstallPrefix, "/root/main")
 		os.Exit(1)
