@@ -123,7 +123,7 @@ func (env Env) installBuildInstall(url string, build func(), install func(string
 		// Part of packaging
 		destDir := path.Join(env.BuildPath, packageVersion(url)+"-package")
 		install(destDir)
-		Tar("cf", tarBall, "-C", destDir, ".")
+		Tar("cf", tarBall, "-C", path.Join(destDir, env.InstallPrefix), ".")
 		Cd(env.Cwd)
 		Rm("-rf", destDir)
 		Rm("-rf", sourceDir)
@@ -136,6 +136,7 @@ func (env Env) installBuildInstall(url string, build func(), install func(string
 
 func (env Env) InstallSimple(url string) {
 	env.installConfigure(url, func() {
-		DotConfigure("--prefix=/usr")
+		//TODO think about how to restore this to --prefix=/usr
+		DotConfigure("--prefix=" + env.InstallPrefix)
 	})
 }
