@@ -51,15 +51,25 @@ func (env *Env) SetUpGlobals() {
 	err = os.MkdirAll(env.InstallPrefix, os.ModePerm)
 	crash(err)
 
+	env.appendToPath()
+
+}
+
+func (env Env) appendToPath() {
+	pathVar := os.Getenv("PATH")
+	//TODO How will this work for tcsh
+	os.Setenv("PATH", path.Join(env.InstallPrefix, "bin")+":"+pathVar)
+}
+
+// TODO Hmm see how to make "protected"
+func (env Env) Exec(cmd string, args ...string) {
+	ExecInteractive(cmd, args...)
 }
 
 func (env Env) Shell() {
 	shell := os.Getenv("SHELL")
-	pathVar := os.Getenv("PATH")
-	//TODO I think this is bash specific, csh uses space etc
-	os.Setenv("PATH", path.Join(env.InstallPrefix, "bin")+":"+pathVar)
-	ExecInteractive(shell)
 	//TODO  also change shell prompt
+	env.Exec(shell)
 }
 
 func (env Env) fetch(url string) {
