@@ -154,7 +154,7 @@ rpc: files
 	//m4 skipping for now
 	//bc skipping as well
 
-	env.installConfigure("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
+	env.InstallConfigure("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
 		Mkdir("build")
 		Cd("build")
 		DotDotConfigure("--prefix=/usr",
@@ -167,7 +167,7 @@ rpc: files
 			"--with-system-zlib")
 	})
 
-	env.installConfigure("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
+	env.InstallConfigure("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
 		//TODO less hardcoded versions
 		env.extract("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
 		env.extract("https://www.mpfr.org/mpfr-4.0.2/mpfr-4.0.2.tar.xz")
@@ -188,17 +188,17 @@ rpc: files
 			"--with-system-zlib")
 	})
 
-	env.installConfigure("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
+	env.InstallConfigure("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--with-internal-glib",
 			"--disable-host-tool")
 	})
 
-	env.installConfigure("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
+	env.InstallConfigure("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
 		DotConfigure("--prefix=/usr", "--bindir=/bin", "--disable-perl-regexp")
 	})
 
-	env.installConfigure("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
+	env.InstallConfigure("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--mandir=/usr/share/man",
 			"--with-shared",
@@ -224,7 +224,7 @@ rpc: files
 
 	env.InstallSimple("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
 
-	env.installConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
+	env.InstallConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
 		Exec("bash", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' gl/lib/*.c")
 		Exec("bash", "-c", "sed -i '/unistd/a #include <sys/sysmacros.h>' gl/lib/mountlist.c")
 		appendToFile("gl/lib/stdio-impl.h", "#define _IO_IN_BACKUP 0x100")
@@ -235,7 +235,7 @@ rpc: files
 	env.InstallSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
 	env.InstallSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
 
-	env.installConfigure("https://nchc.dl.sourceforge.net/project/procps-ng/Production/procps-ng-3.3.15.tar.xz", func() {
+	env.InstallConfigure("https://nchc.dl.sourceforge.net/project/procps-ng/Production/procps-ng-3.3.15.tar.xz", func() {
 		DotConfigure("--prefix=/usr",
 			"--exec-prefix=",
 			"--libdir=/usr/lib",
@@ -244,7 +244,7 @@ rpc: files
 			"--disable-kill")
 	})
 
-	env.installConfigure("https://www.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz", func() {
+	env.InstallConfigure("https://www.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz", func() {
 		DotConfigure("--docdir=/usr/share/doc/util-linux-2.34",
 			"--disable-chfn-chsh",
 			"--disable-login",
@@ -265,12 +265,12 @@ rpc: files
 	env.InstallSimple("http://ftp.gnu.org/gnu/gettext/gettext-0.20.1.tar.xz")
 	env.InstallSimple("http://ftp.gnu.org/gnu/gawk/gawk-5.0.1.tar.xz")
 	env.InstallSimple("http://ftp.gnu.org/gnu/bison/bison-3.5.tar.xz")
-	env.installConfigure("http://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz", func() {
+	env.InstallConfigure("http://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz", func() {
 		Exec("sh", "-c", "sed -i '211,217 d; 219,229 d; 232 d' glob/glob.c")
 		DotConfigure("--prefix=/usr")
 	})
 
-	env.installConfigure("http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz", func() {
+	env.InstallConfigure("http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz", func() {
 		Exec("sh", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' lib/*.c")
 		Exec("sh", "-c", "echo \"#define _IO_IN_BACKUP 0x100\" >> lib/stdio-impl.h")
 		DotConfigure("--prefix=/usr")
@@ -281,11 +281,11 @@ rpc: files
 	// looks like we need this to bootstrap glibc
 	env.InstallSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
 
-	env.installConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
+	env.InstallConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
 		DotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
 	})
 
-	env.installConfigure("http://ftp.gnu.org/gnu/inetutils/inetutils-1.9.4.tar.xz", func() {
+	env.InstallConfigure("http://ftp.gnu.org/gnu/inetutils/inetutils-1.9.4.tar.xz", func() {
 		DotConfigure("--prefix=/usr",
 			"--localstatedir=/var",
 			"--disable-logger",
@@ -297,11 +297,11 @@ rpc: files
 			"--disable-servers")
 	})
 
-	env.installConfigure("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
+	env.InstallConfigure("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
 		DotConfigure("--prefix=/usr")
 	})
 
-	env.installConfigure("https://roy.marples.name/downloads/dhcpcd/dhcpcd-8.1.4.tar.xz", func() {
+	env.InstallConfigure("https://roy.marples.name/downloads/dhcpcd/dhcpcd-8.1.4.tar.xz", func() {
 		DotConfigure("--libexecdir=/lib/dhcpcd", "--dbdir=/var/lib/dhcpcd")
 	})
 
@@ -350,7 +350,7 @@ rpc: files
 	//		dotConfigure("--prefix=/usr", "--without-tcltk")
 	//	})
 
-	env.installConfigure("https://www.openssl.org/source/openssl-1.1.1c.tar.gz", func() {
+	env.InstallConfigure("https://www.openssl.org/source/openssl-1.1.1c.tar.gz", func() {
 		Exec("./config", "--prefix=/usr",
 			"--openssldir=/etc/ssl",
 			"--libdir=lib",

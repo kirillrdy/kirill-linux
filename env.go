@@ -112,7 +112,7 @@ func (env Env) extract(url string) {
 //TODO detect
 const NumberOfMakeJobs = "-j12"
 
-func (env Env) installConfigure(url string, configure func()) {
+func (env Env) InstallConfigure(url string, configure func()) {
 	env.installBuildInstall(url, func() {
 		configure()
 
@@ -147,7 +147,7 @@ func (env Env) installBuildInstall(url string, build func(), install func(string
 }
 
 func (env Env) InstallSimple(url string) {
-	env.installConfigure(url, func() {
+	env.InstallConfigure(url, func() {
 		//TODO think about how to restore this to --prefix=/usr
 		DotConfigure("--prefix=" + env.InstallPrefix)
 	})
