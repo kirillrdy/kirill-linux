@@ -51,6 +51,15 @@ func (env *Env) SetUpGlobals() {
 
 }
 
+func (env Env) Shell() {
+	shell := os.Getenv("SHELL")
+	pathVar := os.Getenv("PATH")
+	//TODO I think this is bash specific, csh uses space etc
+	os.Setenv("PATH", path.Join(env.InstallPrefix, "bin")+":"+pathVar)
+	ExecInteractive(shell)
+	//TODO  also change shell prompt
+}
+
 func (env Env) fetch(url string) {
 	log.Printf("fetching %s\n", url)
 	Cd(env.DistfilesPath)
