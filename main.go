@@ -112,7 +112,7 @@ devtmpfs       /dev         devtmpfs mode=0755,nosuid    0     0
 
 	linuxKernelSourcesURL := "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.6.tar.xz"
 
-	env.installBuildInstall("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
+	env.BuildInstall("http://ftp.gnu.org/gnu/glibc/glibc-2.30.tar.xz", func() {
 		Mkdir("build")
 		Cd("build")
 		DotDotConfigure("--prefix=/usr",
@@ -148,13 +148,13 @@ rpc: files
 		ioutil.WriteFile("etc/nsswitch.conf", []byte(nssContent), os.ModePerm)
 	})
 
-	env.InstallSimple("https://zlib.net/zlib-1.2.11.tar.xz")
-	env.InstallSimple("http://ftp.astron.com/pub/file/file-5.37.tar.gz")
-	env.InstallSimple("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
+	env.Install("https://zlib.net/zlib-1.2.11.tar.xz")
+	env.Install("http://ftp.astron.com/pub/file/file-5.37.tar.gz")
+	env.Install("http://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz")
 	//m4 skipping for now
 	//bc skipping as well
 
-	env.InstallConfigure("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
+	env.ConfigureInstall("http://ftp.gnu.org/gnu/binutils/binutils-2.32.tar.xz", func() {
 		Mkdir("build")
 		Cd("build")
 		DotDotConfigure("--prefix=/usr",
@@ -167,7 +167,7 @@ rpc: files
 			"--with-system-zlib")
 	})
 
-	env.InstallConfigure("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
+	env.ConfigureInstall("http://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz", func() {
 		//TODO less hardcoded versions
 		env.extract("http://ftp.gnu.org/gnu/gmp/gmp-6.1.2.tar.xz")
 		env.extract("https://www.mpfr.org/mpfr-4.0.2/mpfr-4.0.2.tar.xz")
@@ -188,17 +188,17 @@ rpc: files
 			"--with-system-zlib")
 	})
 
-	env.InstallConfigure("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
+	env.ConfigureInstall("https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--with-internal-glib",
 			"--disable-host-tool")
 	})
 
-	env.InstallConfigure("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
+	env.ConfigureInstall("http://ftp.gnu.org/gnu/grep/grep-3.3.tar.xz", func() {
 		DotConfigure("--prefix=/usr", "--bindir=/bin", "--disable-perl-regexp")
 	})
 
-	env.InstallConfigure("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
+	env.ConfigureInstall("http://ftp.gnu.org/gnu/ncurses/ncurses-6.1.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--mandir=/usr/share/man",
 			"--with-shared",
@@ -208,7 +208,7 @@ rpc: files
 			"--enable-widec")
 	})
 
-	env.installBuildInstall("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
+	env.BuildInstall("http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz", func() {
 		DotConfigure("--prefix=/usr",
 			"--docdir=/usr/share/doc/bash-5.0",
 			"--without-bash-malloc",
@@ -222,20 +222,20 @@ rpc: files
 		Ln("-s", "/bin/bash", "bin/sh")
 	})
 
-	env.InstallSimple("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
+	env.Install("http://ftp.gnu.org/gnu/sed/sed-4.7.tar.xz")
 
-	env.InstallConfigure("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
+	env.ConfigureInstall("http://ftp.gnu.org/gnu/findutils/findutils-4.6.0.tar.gz", func() {
 		Exec("bash", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' gl/lib/*.c")
 		Exec("bash", "-c", "sed -i '/unistd/a #include <sys/sysmacros.h>' gl/lib/mountlist.c")
 		appendToFile("gl/lib/stdio-impl.h", "#define _IO_IN_BACKUP 0x100")
 		DotConfigure("--prefix=/usr", "--localstatedir=/var/lib/locate")
 	})
 
-	env.InstallSimple("http://www.greenwoodsoftware.com/less/less-551.tar.gz")
-	env.InstallSimple("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
-	env.InstallSimple("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
+	env.Install("http://www.greenwoodsoftware.com/less/less-551.tar.gz")
+	env.Install("http://ftp.gnu.org/gnu/coreutils/coreutils-8.31.tar.xz")
+	env.Install("https://github.com/vim/vim/archive/v8.1.1846/vim-8.1.1846.tar.gz")
 
-	env.InstallConfigure("https://nchc.dl.sourceforge.net/project/procps-ng/Production/procps-ng-3.3.15.tar.xz", func() {
+	env.ConfigureInstall("https://nchc.dl.sourceforge.net/project/procps-ng/Production/procps-ng-3.3.15.tar.xz", func() {
 		DotConfigure("--prefix=/usr",
 			"--exec-prefix=",
 			"--libdir=/usr/lib",
@@ -244,7 +244,7 @@ rpc: files
 			"--disable-kill")
 	})
 
-	env.InstallConfigure("https://www.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz", func() {
+	env.ConfigureInstall("https://www.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz", func() {
 		DotConfigure("--docdir=/usr/share/doc/util-linux-2.34",
 			"--disable-chfn-chsh",
 			"--disable-login",
@@ -262,30 +262,30 @@ rpc: files
 		)
 	})
 
-	env.InstallSimple("http://ftp.gnu.org/gnu/gettext/gettext-0.20.1.tar.xz")
-	env.InstallSimple("http://ftp.gnu.org/gnu/gawk/gawk-5.0.1.tar.xz")
-	env.InstallSimple("http://ftp.gnu.org/gnu/bison/bison-3.5.tar.xz")
-	env.InstallConfigure("http://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz", func() {
+	env.Install("http://ftp.gnu.org/gnu/gettext/gettext-0.20.1.tar.xz")
+	env.Install("http://ftp.gnu.org/gnu/gawk/gawk-5.0.1.tar.xz")
+	env.Install("http://ftp.gnu.org/gnu/bison/bison-3.5.tar.xz")
+	env.ConfigureInstall("http://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz", func() {
 		Exec("sh", "-c", "sed -i '211,217 d; 219,229 d; 232 d' glob/glob.c")
 		DotConfigure("--prefix=/usr")
 	})
 
-	env.InstallConfigure("http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz", func() {
+	env.ConfigureInstall("http://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz", func() {
 		Exec("sh", "-c", "sed -i 's/IO_ftrylockfile/IO_EOF_SEEN/' lib/*.c")
 		Exec("sh", "-c", "echo \"#define _IO_IN_BACKUP 0x100\" >> lib/stdio-impl.h")
 		DotConfigure("--prefix=/usr")
 	})
 
-	env.InstallSimple("http://ftp.gnu.org/gnu/gzip/gzip-1.10.tar.xz")
+	env.Install("http://ftp.gnu.org/gnu/gzip/gzip-1.10.tar.xz")
 
 	// looks like we need this to bootstrap glibc
-	env.InstallSimple("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
+	env.Install("https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz")
 
-	env.InstallConfigure("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
+	env.ConfigureInstall("https://github.com/shadow-maint/shadow/releases/download/4.8/shadow-4.8.tar.xz", func() {
 		DotConfigure("--sysconfdir=/etc", "--with-group-name-max-length=32")
 	})
 
-	env.InstallConfigure("http://ftp.gnu.org/gnu/inetutils/inetutils-1.9.4.tar.xz", func() {
+	env.ConfigureInstall("http://ftp.gnu.org/gnu/inetutils/inetutils-1.9.4.tar.xz", func() {
 		DotConfigure("--prefix=/usr",
 			"--localstatedir=/var",
 			"--disable-logger",
@@ -297,15 +297,15 @@ rpc: files
 			"--disable-servers")
 	})
 
-	env.InstallConfigure("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
+	env.ConfigureInstall("https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.4.0.tar.xz", func() {
 		DotConfigure("--prefix=/usr")
 	})
 
-	env.InstallConfigure("https://roy.marples.name/downloads/dhcpcd/dhcpcd-8.1.4.tar.xz", func() {
+	env.ConfigureInstall("https://roy.marples.name/downloads/dhcpcd/dhcpcd-8.1.4.tar.xz", func() {
 		DotConfigure("--libexecdir=/lib/dhcpcd", "--dbdir=/var/lib/dhcpcd")
 	})
 
-	env.installBuildInstall(linuxKernelSourcesURL, func() {
+	env.BuildInstall(linuxKernelSourcesURL, func() {
 
 		// zfs has very slow configure time, so disabling it until i get to zfs on root
 		enableZFS := false
@@ -350,7 +350,7 @@ rpc: files
 	//		dotConfigure("--prefix=/usr", "--without-tcltk")
 	//	})
 
-	env.InstallConfigure("https://www.openssl.org/source/openssl-1.1.1c.tar.gz", func() {
+	env.ConfigureInstall("https://www.openssl.org/source/openssl-1.1.1c.tar.gz", func() {
 		Exec("./config", "--prefix=/usr",
 			"--openssldir=/etc/ssl",
 			"--libdir=lib",
@@ -358,9 +358,9 @@ rpc: files
 			"zlib-dynamic")
 	})
 
-	env.InstallSimple("https://curl.haxx.se/download/curl-7.67.0.tar.xz")
-	env.InstallSimple("http://ftp.gnu.org/gnu/tar/tar-1.32.tar.xz")
-	env.InstallSimple("https://nchc.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz")
+	env.Install("https://curl.haxx.se/download/curl-7.67.0.tar.xz")
+	env.Install("http://ftp.gnu.org/gnu/tar/tar-1.32.tar.xz")
+	env.Install("https://nchc.dl.sourceforge.net/project/lzmautils/xz-5.2.4.tar.xz")
 
 	if *enterChroot {
 		log.Printf("Entering chroot !!!!!!")

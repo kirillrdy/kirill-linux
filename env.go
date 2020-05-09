@@ -112,8 +112,8 @@ func (env Env) extract(url string) {
 //TODO detect
 const NumberOfMakeJobs = "-j12"
 
-func (env Env) InstallConfigure(url string, configure func()) {
-	env.installBuildInstall(url, func() {
+func (env Env) ConfigureInstall(url string, configure func()) {
+	env.BuildInstall(url, func() {
 		configure()
 
 		Make(NumberOfMakeJobs)
@@ -123,7 +123,7 @@ func (env Env) InstallConfigure(url string, configure func()) {
 }
 
 // stupid name, but what can you do
-func (env Env) installBuildInstall(url string, build func(), install func(string)) {
+func (env Env) BuildInstall(url string, build func(), install func(string)) {
 	tarBall := path.Join(env.PkgPath, packageVersion(url)+".tar.xz")
 
 	if _, err := os.Stat(tarBall); os.IsNotExist(err) {
@@ -146,8 +146,8 @@ func (env Env) installBuildInstall(url string, build func(), install func(string
 	Tar("xf", tarBall, "-C", env.InstallPrefix)
 }
 
-func (env Env) InstallSimple(url string) {
-	env.InstallConfigure(url, func() {
+func (env Env) Install(url string) {
+	env.ConfigureInstall(url, func() {
 		//TODO think about how to restore this to --prefix=/usr
 		DotConfigure("--prefix=" + env.InstallPrefix)
 	})
