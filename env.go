@@ -33,19 +33,21 @@ func (env *Env) SetUpGlobals() {
 	env.Cwd, err = os.Getwd()
 	crash(err)
 
-	env.DistfilesPath = path.Join(env.Cwd, "distfiles")
+	hiddenDir := ".everything"
+
+	env.DistfilesPath = path.Join(env.Cwd, hiddenDir, "distfiles")
 	err = os.MkdirAll(env.DistfilesPath, os.ModePerm)
 	crash(err)
 
-	env.BuildPath = path.Join(env.Cwd, "build")
+	env.BuildPath = path.Join(env.Cwd, hiddenDir, "build")
 	err = os.MkdirAll(env.BuildPath, os.ModePerm)
 	crash(err)
 
-	env.PkgPath = path.Join(env.Cwd, "package")
+	env.PkgPath = path.Join(env.Cwd, hiddenDir, "package")
 	err = os.MkdirAll(env.PkgPath, os.ModePerm)
 	crash(err)
 
-	env.InstallPrefix = path.Join(env.Cwd, "newroot")
+	env.InstallPrefix = path.Join(env.Cwd, hiddenDir, "newroot")
 	err = os.MkdirAll(env.InstallPrefix, os.ModePerm)
 	crash(err)
 
