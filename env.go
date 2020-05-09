@@ -98,7 +98,7 @@ func (env Env) extract(url string) {
 }
 
 //TODO detect
-const NumberOfMakeJobs = "-j8"
+const NumberOfMakeJobs = "-j12"
 
 func (env Env) installConfigure(url string, configure func()) {
 	env.installBuildInstall(url, func() {
