@@ -59,8 +59,7 @@ func packageVersion(url string) string {
 }
 
 func mainFunction() {
-	env := Env{}
-	env.SetUpGlobals()
+	env := NewEnv()
 
 	enterChroot := flag.Bool("c", false, "enter chroot")
 	flag.Parse()
