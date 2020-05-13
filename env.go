@@ -26,8 +26,13 @@ type Env struct {
 	InstallPrefix string
 }
 
-//TODO rename
-func (env *Env) SetUpGlobals() {
+func NewEnv() Env {
+	env := Env{}
+	env.setUpGlobals()
+	return env
+}
+
+func (env *Env) setUpGlobals() {
 
 	var err error
 	env.Cwd, err = os.Getwd()
