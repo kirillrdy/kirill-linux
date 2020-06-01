@@ -71,7 +71,12 @@ func (env Env) Exec(cmd string, args ...string) {
 	ExecInteractive(cmd, args...)
 }
 
-func (env Env) Shell() {
+func (env Env) Shell(cmd string) {
+	shell := os.Getenv("SHELL")
+	env.Exec(shell, "-c", cmd)
+}
+
+func (env Env) InteractiveShell() {
 	shell := os.Getenv("SHELL")
 	//TODO  also change shell prompt
 	env.Exec(shell)
