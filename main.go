@@ -120,7 +120,7 @@ devtmpfs       /dev         devtmpfs mode=0755,nosuid    0     0
 			"--enable-stack-protector=strong",
 			"--with-headers=/usr/include",
 			"libc_cv_slibdir=/lib")
-		Make(NumberOfMakeJobs)
+		Make(NumberOfMakeJobs())
 	}, func(destDir string) {
 		Make("install", "DESTDIR="+destDir)
 		Cd(destDir)
@@ -212,7 +212,7 @@ rpc: files
 			"--docdir=/usr/share/doc/bash-5.0",
 			"--without-bash-malloc",
 			"--with-installed-readline")
-		Make(NumberOfMakeJobs)
+		Make(NumberOfMakeJobs())
 	}, func(destDir string) {
 		Make("install", "DESTDIR="+destDir)
 		Cd(destDir)
@@ -312,7 +312,7 @@ rpc: files
 		if enableZFS {
 			env.extract("https://github.com/zfsonlinux/zfs/releases/download/zfs-0.8.2/zfs-0.8.2.tar.gz")
 			DotConfigure("--enable-linux-builtin")
-			Make(NumberOfMakeJobs)
+			Make(NumberOfMakeJobs())
 			Exec("./copy-builtin", "../linux-5.4.6")
 			Cd("../linux-5.4.6")
 			Rm("-rfv", "../zfs-0.8.2")
@@ -327,7 +327,7 @@ rpc: files
 			"CONFIG_DRM_NOUVEAU=y",
 		)
 
-		Make(NumberOfMakeJobs)
+		Make(NumberOfMakeJobs())
 	}, func(destDir string) {
 		//TODO dont forget modules as well
 		Mkdir("-p", path.Join(destDir, "/boot/efi/EFI/boot"))

@@ -1,12 +1,14 @@
 package kirill_linux
 
 import (
+	"fmt"
 	. "github.com/kirillrdy/kirill-linux/shell"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
+	"runtime"
 )
 
 type Env struct {
@@ -119,14 +121,15 @@ func (env Env) extract(url string) {
 	Cd(extractedSourcePath)
 }
 
-//TODO detect
-const NumberOfMakeJobs = "-j12"
+func NumberOfMakeJobs() string {
+	return fmt.Sprintf("-j%d", runtime.NumCPU())
+}
 
 func (env Env) ConfigureInstall(url string, configure func()) {
 	env.BuildInstall(url, func() {
 		configure()
 
-		Make(NumberOfMakeJobs)
+		Make(NumberOfMakeJobs())
 	}, func(destDir string) {
 		Make("install", "DESTDIR="+destDir)
 	})
