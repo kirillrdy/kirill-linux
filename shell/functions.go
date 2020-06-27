@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 )
 
 //TODO have some sort of same thing
@@ -49,8 +50,14 @@ func Tar(args ...string) {
 	Exec("tar", args...)
 }
 
+// This is a hard choice to make, but
+// for now on FreeBSD we have to call gmake
 func Make(args ...string) {
-	Exec("make", args...)
+	if runtime.GOOS == "linux" {
+		Exec("make", args...)
+	} else {
+		Exec("gmake", args...)
+	}
 }
 
 func Rm(args ...string) {
