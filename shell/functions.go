@@ -2,6 +2,7 @@ package shell
 
 import (
 	"bytes"
+	"github.com/kirillrdy/kirill-linux/config"
 	"log"
 	"os"
 	"os/exec"
@@ -16,7 +17,9 @@ func crash(err error) {
 }
 
 func ExecInteractive(cmd string, args ...string) {
-	log.Printf("%s %s", cmd, args)
+	if config.Verbose {
+		log.Printf("%s %s", cmd, args)
+	}
 	command := exec.Command(cmd, args...)
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
@@ -26,7 +29,9 @@ func ExecInteractive(cmd string, args ...string) {
 }
 
 func Exec(cmd string, args ...string) {
-	log.Printf("%s %s", cmd, args)
+	if config.Verbose {
+		log.Printf("%s %s", cmd, args)
+	}
 	command := exec.Command(cmd, args...)
 	var buffer bytes.Buffer
 	command.Stdout = &buffer
@@ -81,6 +86,8 @@ func DotDotConfigure(args ...string) {
 }
 
 func Cd(dir string) {
-	log.Printf("cd %s", dir)
+	if config.Verbose {
+		log.Printf("cd %s", dir)
+	}
 	os.Chdir(dir)
 }

@@ -2,6 +2,7 @@ package kirill_linux
 
 import (
 	"fmt"
+	"github.com/kirillrdy/kirill-linux/config"
 	. "github.com/kirillrdy/kirill-linux/shell"
 	"io"
 	"log"
@@ -85,7 +86,9 @@ func (env Env) InteractiveShell() {
 }
 
 func (env Env) fetch(url string) {
-	log.Printf("fetching %s\n", url)
+	if config.Verbose {
+		log.Printf("fetching %s\n", url)
+	}
 	Cd(env.DistfilesPath)
 
 	// Get the data
