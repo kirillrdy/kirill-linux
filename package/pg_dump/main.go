@@ -10,7 +10,7 @@ import (
 func main() {
 	config.Verbose = false
 	env := kirill_linux.NewEnv()
-	env.BuildInstall("https://ftp.postgresql.org/pub/source/v12.5/postgresql-12.5.tar.bz2", func() {
+	env.BuildInstall("https://ftp.postgresql.org/pub/source/v13.1/postgresql-13.1.tar.bz2", func() {
 		shell.DotConfigure("--prefix="+env.InstallPrefix, "--with-uuid=e2fs")
 		shell.Make(kirill_linux.NumberOfMakeJobs())
 	}, func(destDir string) {
